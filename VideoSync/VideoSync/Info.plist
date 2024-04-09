@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Reason for using Bonjour that the user can understand</string>
+	<key>NSBonjourServices</key>
+	<array>
+        <string>_p2p-chat._tcp</string>
+        <string>_p2p-chat._udp</string>
+        <string>_videosync._tcp</string>
+        <string>_videosync._udp</string>
+	</array>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+    </dict>
+    <key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
+    <true/>
+    <key>NSCameraUsageDescription</key>
+    <string>$(PRODUCT_NAME) camera description.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>$(PRODUCT_NAME)photos description.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>$(PRODUCT_NAME) photos add description.</string>
+    <key> NSLocationWhenInUseUsageDescription</key>
+    <string>$(PRODUCT_NAME) location description.</string>
+</dict>
+</plist>

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		71FF5B632BC5C9040023F0D1 /* Network.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FF5B622BC5C9040023F0D1 /* Network.swift */; };
 		7206E5BA2BC421B50072467D /* VideoSyncApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7206E5B92BC421B50072467D /* VideoSyncApp.swift */; };
 		7206E5BC2BC421B50072467D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7206E5BB2BC421B50072467D /* ContentView.swift */; };
 		7206E5BE2BC421B60072467D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7206E5BD2BC421B60072467D /* Assets.xcassets */; };
@@ -34,6 +35,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		71FF5B622BC5C9040023F0D1 /* Network.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Network.swift; sourceTree = "<group>"; };
+		71FF5B872BC5F5990023F0D1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7206E5B62BC421B50072467D /* VideoSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VideoSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7206E5B92BC421B50072467D /* VideoSyncApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoSyncApp.swift; sourceTree = "<group>"; };
 		7206E5BB2BC421B50072467D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -95,11 +98,13 @@
 		7206E5B82BC421B50072467D /* VideoSync */ = {
 			isa = PBXGroup;
 			children = (
+				71FF5B872BC5F5990023F0D1 /* Info.plist */,
 				7206E5B92BC421B50072467D /* VideoSyncApp.swift */,
 				7206E5BB2BC421B50072467D /* ContentView.swift */,
 				7206E5BD2BC421B60072467D /* Assets.xcassets */,
 				7206E5BF2BC421B60072467D /* VideoSync.entitlements */,
 				7206E5C02BC421B60072467D /* Preview Content */,
+				71FF5B622BC5C9040023F0D1 /* Network.swift */,
 			);
 			path = VideoSync;
 			sourceTree = "<group>";
@@ -261,6 +266,7 @@
 			files = (
 				7206E5BC2BC421B50072467D /* ContentView.swift in Sources */,
 				7206E5BA2BC421B50072467D /* VideoSyncApp.swift in Sources */,
+				71FF5B632BC5C9040023F0D1 /* Network.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -424,6 +430,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VideoSync/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -432,14 +439,12 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ton252.video.sync.VideoSync;
+				PRODUCT_BUNDLE_IDENTIFIER = ton252.videosync;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -462,6 +467,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VideoSync/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -470,14 +476,12 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ton252.video.sync.VideoSync;
+				PRODUCT_BUNDLE_IDENTIFIER = ton252.videosync;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
