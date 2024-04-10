@@ -26,10 +26,14 @@ struct ChatView: View {
                 .aspectRatio(16/9, contentMode: .fit)
                 .layoutPriority(1)
             ScrollView {
-                ForEach(chatManager.messages.map() { $0.body ?? "" }, id: \.self) { message in
-                    Text(message).padding()
-                }
-                .frame(width: UIScreen.main.bounds.width)
+                ForEach(
+                    chatManager.messages
+                        .filter() { $0.type == .message }
+                        .map() { $0.body ?? "" },
+                    id: \.self) { message in
+                        Text(message).padding()
+                    }
+                    .frame(width: UIScreen.main.bounds.width)
             }
             HStack {
                 TextField("Введите сообщение здесь", text: $messageText)

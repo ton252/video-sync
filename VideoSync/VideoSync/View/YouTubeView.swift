@@ -26,17 +26,6 @@ struct YouTubeView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .onAppear() {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
-                controller.pause()
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 8.0) {
-                controller.play()
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 16.0) {
-                controller.seek(time: 60)
-            }
-        }
     }
 }
 
