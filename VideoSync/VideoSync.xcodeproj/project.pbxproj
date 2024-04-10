@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		71FF5B892BC687BA0023F0D1 /* ChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FF5B882BC687BA0023F0D1 /* ChatManager.swift */; };
 		71FF5B8B2BC688220023F0D1 /* MCBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FF5B8A2BC688220023F0D1 /* MCBrowserView.swift */; };
+		71FF5B8F2BC68F5D0023F0D1 /* YouTubeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FF5B8E2BC68F5D0023F0D1 /* YouTubeView.swift */; };
+		71FF5B922BC693900023F0D1 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FF5B912BC693900023F0D1 /* ChatView.swift */; };
+		71FF5B952BC693F90023F0D1 /* MessageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FF5B942BC693F90023F0D1 /* MessageModel.swift */; };
 		7206E5BA2BC421B50072467D /* VideoSyncApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7206E5B92BC421B50072467D /* VideoSyncApp.swift */; };
 		7206E5BC2BC421B50072467D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7206E5BB2BC421B50072467D /* ContentView.swift */; };
 		7206E5BE2BC421B60072467D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7206E5BD2BC421B60072467D /* Assets.xcassets */; };
@@ -39,6 +42,9 @@
 		71FF5B872BC5F5990023F0D1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		71FF5B882BC687BA0023F0D1 /* ChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManager.swift; sourceTree = "<group>"; };
 		71FF5B8A2BC688220023F0D1 /* MCBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCBrowserView.swift; sourceTree = "<group>"; };
+		71FF5B8E2BC68F5D0023F0D1 /* YouTubeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeView.swift; sourceTree = "<group>"; };
+		71FF5B912BC693900023F0D1 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		71FF5B942BC693F90023F0D1 /* MessageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageModel.swift; sourceTree = "<group>"; };
 		7206E5B62BC421B50072467D /* VideoSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VideoSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7206E5B92BC421B50072467D /* VideoSyncApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoSyncApp.swift; sourceTree = "<group>"; };
 		7206E5BB2BC421B50072467D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -80,8 +86,10 @@
 		71FF5B8C2BC688350023F0D1 /* View */ = {
 			isa = PBXGroup;
 			children = (
-				71FF5B8A2BC688220023F0D1 /* MCBrowserView.swift */,
 				7206E5BB2BC421B50072467D /* ContentView.swift */,
+				71FF5B912BC693900023F0D1 /* ChatView.swift */,
+				71FF5B8A2BC688220023F0D1 /* MCBrowserView.swift */,
+				71FF5B8E2BC68F5D0023F0D1 /* YouTubeView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -92,6 +100,14 @@
 				71FF5B882BC687BA0023F0D1 /* ChatManager.swift */,
 			);
 			path = Service;
+			sourceTree = "<group>";
+		};
+		71FF5B932BC693E30023F0D1 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				71FF5B942BC693F90023F0D1 /* MessageModel.swift */,
+			);
+			path = Model;
 			sourceTree = "<group>";
 		};
 		7206E5AD2BC421B50072467D = {
@@ -118,6 +134,7 @@
 			isa = PBXGroup;
 			children = (
 				71FF5B8D2BC688590023F0D1 /* Service */,
+				71FF5B932BC693E30023F0D1 /* Model */,
 				71FF5B8C2BC688350023F0D1 /* View */,
 				71FF5B872BC5F5990023F0D1 /* Info.plist */,
 				7206E5B92BC421B50072467D /* VideoSyncApp.swift */,
@@ -284,8 +301,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				7206E5BC2BC421B50072467D /* ContentView.swift in Sources */,
+				71FF5B8F2BC68F5D0023F0D1 /* YouTubeView.swift in Sources */,
+				71FF5B952BC693F90023F0D1 /* MessageModel.swift in Sources */,
 				7206E5BA2BC421B50072467D /* VideoSyncApp.swift in Sources */,
 				71FF5B8B2BC688220023F0D1 /* MCBrowserView.swift in Sources */,
+				71FF5B922BC693900023F0D1 /* ChatView.swift in Sources */,
 				71FF5B892BC687BA0023F0D1 /* ChatManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

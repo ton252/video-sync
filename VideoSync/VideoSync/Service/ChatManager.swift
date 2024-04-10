@@ -11,7 +11,7 @@ import MultipeerConnectivity
 class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCBrowserViewControllerDelegate, MCNearbyServiceAdvertiserDelegate {
     @Published var messages: [String] = []
     @Published var showBrowser = false
-
+    
     var peerID: MCPeerID
     var mcSession: MCSession
     var serviceAdvertiser: MCNearbyServiceAdvertiser?
@@ -52,14 +52,14 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCBrowserViewC
     // MARK: MCSessionDelegate
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
         switch state {
-            case .connected:
-                print("Connected: \(peerID.displayName)")
-            case .connecting:
-                print("Connecting: \(peerID.displayName)")
-            case .notConnected:
-                print("Not Connected: \(peerID.displayName)")
-            @unknown default:
-                print("Unknown state received: \(peerID.displayName)")
+        case .connected:
+            print("Connected: \(peerID.displayName)")
+        case .connecting:
+            print("Connecting: \(peerID.displayName)")
+        case .notConnected:
+            print("Not Connected: \(peerID.displayName)")
+        @unknown default:
+            print("Unknown state received: \(peerID.displayName)")
         }
     }
     
