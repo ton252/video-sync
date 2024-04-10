@@ -67,10 +67,11 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCBrowserViewC
     }
     
     func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
-        if let message = String(data: data, encoding: .utf8) {
-            DispatchQueue.main.async {
-                self.messages.append("\(peerID.displayName): \(message)")
-            }
+        let decoder = JSONDecoder()
+        guard let message = try? decoder.decode(MessageModel.self, from: data) else { return }
+        
+        DispatchQueue.main.async {
+            self.messages.append(message)
         }
     }
     

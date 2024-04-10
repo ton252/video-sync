@@ -26,7 +26,7 @@ struct ChatView: View {
                 .aspectRatio(16/9, contentMode: .fit)
                 .layoutPriority(1)
             ScrollView {
-                ForEach(chatManager.messages, id: \.self) { message in
+                ForEach(chatManager.messages.map() { $0.body ?? "" }, id: \.self) { message in
                     Text(message).padding()
                 }
                 .frame(width: UIScreen.main.bounds.width)
@@ -35,7 +35,7 @@ struct ChatView: View {
                 TextField("Введите сообщение здесь", text: $messageText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 Button("Отправить") {
-                    chatManager.sendMessage(messageText)
+                    chatManager.sendMessage(MessageModel(body: messageText))
                     messageText = ""
                 }
             }.padding()

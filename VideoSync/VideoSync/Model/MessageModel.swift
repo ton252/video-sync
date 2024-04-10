@@ -23,7 +23,11 @@ class MessageModel: Codable {
         case id, body, type, data
     }
     
-    init(body: String?, type: MessageType = .message, data: [String: Any]?) {
+    init(
+        body: String?,
+        type: MessageType = .message,
+        data: [String: Any]? = nil
+    ) {
         self.body = body
         self.type = type
         self.data = data

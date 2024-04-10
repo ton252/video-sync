@@ -10,20 +10,33 @@ import WebKit
 
 struct YouTubeView: View {
     @Binding var videoLink: String?
-    @State var isPlaying: Bool = true
     @State var currentTime: TimeInterval = 0.0
+    let controller = YouTubeWebViewController()
     
     var body: some View {
         ZStack {
             Color.black
             if let videoLink = videoLink {
-                YouTubeWebView(videoLink: Binding.constant(videoLink), isPlaying: $isPlaying, currentTime: $currentTime, onStateChange: {
-                    state in
-                    print(state)
+                YouTubeWebView(
+                    videoLink: Binding.constant(videoLink),
+                    controller: controller,
+                    onStateChange: {
+                        state in
                 })
             }
         }
         .frame(maxWidth: .infinity)
+        .onAppear() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+                controller.pause()
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 8.0) {
+                controller.play()
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 16.0) {
+                controller.seek(time: 60)
+            }
+        }
     }
 }
 
@@ -40,32 +53,58 @@ struct PlayerVars {
     var playsinline: Int = 1
 }
 
+class YouTubeWebViewController {
+    fileprivate weak var coordinator: YouTubeWebView.Coordinator?
+    
+    var currentTime: TimeInterval {
+        return 0
+    }
+    
+    var state: PlayerState {
+        return .unstarted
+    }
+    
+    func play() {
+        coordinator?.play()
+    }
+    
+    func pause()  {
+        coordinator?.pause()
+    }
+    
+    func seek(time: TimeInterval) {
+        coordinator?.seek(time: time)
+    }
+}
+
 struct YouTubeWebView: UIViewRepresentable {
     @Binding var videoLink: String
-    @Binding var autoplay: Int
-    @Binding var playsinline: Int
-    @Binding var isPlaying: Bool
-    @Binding var currentTime: TimeInterval
-        
+    
+    let autoplay: Int
+    let playsinline: Int
+         
     var onStateChange: ((PlayerState) -> ())?
+    var onTimeChange: ((TimeInterval) -> ())?
+    
+    private let controller: YouTubeWebViewController
         
-    var videoId: String? {
+    private var videoId: String? {
         return extractVideoId(from: videoLink)
     }
-        
+            
     init(
         videoLink: Binding<String>,
-        autoplay: Binding<Int> = .constant(1),
-        playsinline: Binding<Int> = .constant(1),
-        isPlaying: Binding<Bool> = .constant(false),
-        currentTime: Binding<TimeInterval> = .constant(0),
+        autoplay: Int = 1,
+        playsinline: Int = 1,
+        controller: YouTubeWebViewController = YouTubeWebViewController(),
         onStateChange: ((PlayerState) -> ())? = nil
     ) {
         self._videoLink = videoLink
-        self._autoplay = autoplay
-        self._playsinline = playsinline
-        self._isPlaying = isPlaying
-        self._currentTime = currentTime
+        
+        self.autoplay = autoplay
+        self.playsinline = playsinline
+        self.controller = controller
+        
         self.onStateChange = onStateChange
     }
     
@@ -79,54 +118,16 @@ struct YouTubeWebView: UIViewRepresentable {
     
     func updateUIView(_ uiView: WKWebView, context: Context) {
         let coordinator = context.coordinator
-        if coordinator.previousAutoplay != autoplay ||
-            coordinator.previousPlaysinline != playsinline ||
-            coordinator.previousVideoLink != videoLink
-        {
+        if coordinator.previousVideoLink != videoLink {
             uiView.loadHTMLString(htmlString, baseURL: nil)
         }
-                
-        if currentTime != coordinator.previousCurrentTime {
-            seek(uiView, time: currentTime)
-        }
-                
-        if coordinator.state == .playing && isPlaying == false {
-            pause(uiView)
-        } else if coordinator.state == .paused && isPlaying == true {
-            play(uiView)
-        }
-                
         updatePreviousValues(context: context)
     }
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    private func play(_ uiView: WKWebView) {
-        uiView.evaluateJavaScript("playVideo();")
-    }
-    
-    private func pause(_ uiView: WKWebView) {
-        uiView.evaluateJavaScript("pauseVideo();")
-    }
-    
-    private func seek(_ uiView: WKWebView, time: TimeInterval) {
-        uiView.evaluateJavaScript("seekTo(\(time));")
-    }
-    
-    private func fetchCurrentTime(_ uiView: WKWebView, completion: @escaping (TimeInterval) -> ()) {
-        uiView.evaluateJavaScript("getCurrentTime();") { (result, error) in
-            if error != nil {
-                completion(0)
-                return
-            }
-            if let currentTime = result as? TimeInterval {
-                completion(currentTime)
-            } else {
-                completion(0)
-            }
-        }
+        let coordinator = Coordinator(self)
+        controller.coordinator = coordinator
+        return coordinator
     }
     
     private func webViewConfig(context: Context) -> WKWebViewConfiguration {
@@ -262,10 +263,7 @@ struct YouTubeWebView: UIViewRepresentable {
     }
     
     private func updatePreviousValues(context: Context) {
-        context.coordinator.previousAutoplay = autoplay
-        context.coordinator.previousPlaysinline = autoplay
         context.coordinator.previousVideoLink = videoLink
-        context.coordinator.previousCurrentTime = currentTime
     }
     
     private func extractVideoId(from url: String) -> String? {
@@ -291,15 +289,11 @@ struct YouTubeWebView: UIViewRepresentable {
     class Coordinator: NSObject, WKScriptMessageHandler {
         var parent: YouTubeWebView
         weak var webView: WKWebView?
-        
-        var state: PlayerState?
-        
-        var previousAutoplay: Int?
-        var previousPlaysinline: Int?
         var previousVideoLink: String?
-        var previousIsPlaying: Bool?
-        var previousCurrentTime: TimeInterval?
         
+        var state: PlayerState = .unstarted
+        var currentTime: TimeInterval = 0
+
         init(_ parent: YouTubeWebView) {
             self.parent = parent
         }
@@ -315,8 +309,34 @@ struct YouTubeWebView: UIViewRepresentable {
             } else if messageBody.contains("CurrentTime: ") {
                 let data = messageBody.replacingOccurrences(of: "CurrentTime: ", with: "")
                 let time = TimeInterval(data) ?? 0
-                print(time)
-                //self.parent.currentTime = time
+                currentTime = time
+                parent.onTimeChange?(time)
+            }
+        }
+        
+        func play() {
+            webView?.evaluateJavaScript("playVideo();")
+        }
+        
+        func pause() {
+            webView?.evaluateJavaScript("pauseVideo();")
+        }
+        
+        func seek(time: TimeInterval) {
+            webView?.evaluateJavaScript("seekTo(\(time));")
+        }
+        
+        private func fetchCurrentTime(completion: @escaping (TimeInterval) -> ()) {
+            webView?.evaluateJavaScript("getCurrentTime();") { (result, error) in
+                if error != nil {
+                    completion(0)
+                    return
+                }
+                if let currentTime = result as? TimeInterval {
+                    completion(currentTime)
+                } else {
+                    completion(0)
+                }
             }
         }
     }
