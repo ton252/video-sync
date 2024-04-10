@@ -16,6 +16,7 @@ struct ChatView: View {
     let connectionType: ChatConnectionType
     
     @ObservedObject var chatManager = ChatManager()
+    @State private var isStreamer: Bool = false
     @State private var messageText: String = ""
     @State private var videoLink: String? = "https://youtu.be/uNiQJhz7iQU?si=BkVMrOVTfQMYmhDZ"
     

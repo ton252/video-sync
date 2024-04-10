@@ -12,6 +12,8 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCBrowserViewC
     @Published var messages: [String] = []
     @Published var showBrowser = false
     
+    var onSystem: ((String) -> ())?
+    
     var peerID: MCPeerID
     var mcSession: MCSession
     var serviceAdvertiser: MCNearbyServiceAdvertiser?

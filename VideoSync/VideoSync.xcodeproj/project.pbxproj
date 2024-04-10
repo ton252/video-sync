@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7113FF2E2BC6E75100DC7B3F /* CommandPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7113FF2D2BC6E75100DC7B3F /* CommandPerformer.swift */; };
 		71FF5B892BC687BA0023F0D1 /* ChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FF5B882BC687BA0023F0D1 /* ChatManager.swift */; };
 		71FF5B8B2BC688220023F0D1 /* MCBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FF5B8A2BC688220023F0D1 /* MCBrowserView.swift */; };
 		71FF5B8F2BC68F5D0023F0D1 /* YouTubeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FF5B8E2BC68F5D0023F0D1 /* YouTubeView.swift */; };
@@ -39,6 +40,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		7113FF2D2BC6E75100DC7B3F /* CommandPerformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPerformer.swift; sourceTree = "<group>"; };
 		71FF5B872BC5F5990023F0D1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		71FF5B882BC687BA0023F0D1 /* ChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManager.swift; sourceTree = "<group>"; };
 		71FF5B8A2BC688220023F0D1 /* MCBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCBrowserView.swift; sourceTree = "<group>"; };
@@ -90,6 +92,7 @@
 				71FF5B912BC693900023F0D1 /* ChatView.swift */,
 				71FF5B8A2BC688220023F0D1 /* MCBrowserView.swift */,
 				71FF5B8E2BC68F5D0023F0D1 /* YouTubeView.swift */,
+				7113FF2D2BC6E75100DC7B3F /* CommandPerformer.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -302,6 +305,7 @@
 			files = (
 				7206E5BC2BC421B50072467D /* ContentView.swift in Sources */,
 				71FF5B8F2BC68F5D0023F0D1 /* YouTubeView.swift in Sources */,
+				7113FF2E2BC6E75100DC7B3F /* CommandPerformer.swift in Sources */,
 				71FF5B952BC693F90023F0D1 /* MessageModel.swift in Sources */,
 				7206E5BA2BC421B50072467D /* VideoSyncApp.swift in Sources */,
 				71FF5B8B2BC688220023F0D1 /* MCBrowserView.swift in Sources */,
