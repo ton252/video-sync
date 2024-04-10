@@ -10,24 +10,34 @@ import WebKit
 
 struct YouTubeView: View {
     @Binding var videoLink: String?
-    @State var isPlaying: Bool = false
+    @State var isPlaying: Bool = true
+    @State var currentTime: TimeInterval = 0.0
     
     var body: some View {
         ZStack {
             Color.black
             if let videoLink = videoLink {
-                YouTubeWebView(videoLink: Binding.constant(videoLink), isPlaying: $isPlaying)
+                YouTubeWebView(videoLink: Binding.constant(videoLink), isPlaying: $isPlaying, currentTime: $currentTime, onStateChange: {
+                    state in
+                    print(state)
+                })
             }
         }
         .aspectRatio(16/9, contentMode: .fit)
         .frame(maxWidth: .infinity)
         .onAppear() {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
-                self.isPlaying = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 8.0) {
-                self.isPlaying = false
-            }
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+//                self.currentTime = 60
+//            }
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+//                self.isPlaying = false
+//            }
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 20.0) {
+//                self.isPlaying = true
+//            }
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 16.0) {
+//                self.currentTime = 30
+//            }
         }
     }
 }
@@ -45,45 +55,13 @@ struct PlayerVars {
     var playsinline: Int = 1
 }
 
-//class YouTubePlayerViewModel: ObservableObject {
-//    @Published var videoLink: String
-//    @Published var playerVars: PlayerVars
-//    @Published var playerState: PlayerState = .unstarted
-//    
-//    init(videoLink: String, playerVars: PlayerVars) {
-//        self.videoLink = videoLink
-//        self.playerVars = playerVars
-//    }
-//    
-//    func play() {
-//
-//    }
-//    
-//    
-//    
-//    var videoLink: String
-//    var playerVars: PlayerVars
-//    
-//    func play() {
-//        
-//    }
-//    
-//    func stop() {
-//        
-//    }
-//    
-//    func seekTo(_ time: TimeInterval) {
-//        
-//    }
-//}
-
 struct YouTubeWebView: UIViewRepresentable {
     @Binding var videoLink: String
     @Binding var autoplay: Int
     @Binding var playsinline: Int
     @Binding var isPlaying: Bool
+    @Binding var currentTime: TimeInterval
         
-    private(set) var state: PlayerState?
     var onStateChange: ((PlayerState) -> ())?
         
     var videoId: String? {
@@ -95,12 +73,14 @@ struct YouTubeWebView: UIViewRepresentable {
         autoplay: Binding<Int> = .constant(1),
         playsinline: Binding<Int> = .constant(1),
         isPlaying: Binding<Bool> = .constant(false),
+        currentTime: Binding<TimeInterval> = .constant(0),
         onStateChange: ((PlayerState) -> ())? = nil
     ) {
         self._videoLink = videoLink
         self._autoplay = autoplay
         self._playsinline = playsinline
         self._isPlaying = isPlaying
+        self._currentTime = currentTime
         self.onStateChange = onStateChange
     }
     
@@ -113,23 +93,55 @@ struct YouTubeWebView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: WKWebView, context: Context) {
-        if context.coordinator.previousAutoplay != autoplay ||
-            context.coordinator.previousPlaysinline != playsinline ||
-            context.coordinator.previousVideoLink != videoLink
+        let coordinator = context.coordinator
+        if coordinator.previousAutoplay != autoplay ||
+            coordinator.previousPlaysinline != playsinline ||
+            coordinator.previousVideoLink != videoLink
         {
-            updatePreviousValues(context: context)
             uiView.loadHTMLString(htmlString, baseURL: nil)
         }
-        
-        if  isPlaying && state != .playing {
-            uiView.evaluateJavaScript("document.querySelector('iframe').contentWindow.postMessage('{\"event\":\"command\",\"func\":\"playVideo\",\"args\":\"\"}', '*')", completionHandler: nil)
-        } else if !isPlaying && state != .paused {
-            uiView.evaluateJavaScript("document.querySelector('iframe').contentWindow.postMessage('{\"event\":\"command\",\"func\":\"pauseVideo\",\"args\":\"\"}', '*')", completionHandler: nil)
+                
+        if currentTime != coordinator.previousCurrentTime {
+            seek(uiView, time: currentTime)
         }
+                
+        if coordinator.state == .playing && isPlaying == false {
+            pause(uiView)
+        } else if coordinator.state == .paused && isPlaying == true {
+            play(uiView)
+        }
+                
+        updatePreviousValues(context: context)
     }
     
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
+    }
+    
+    private func play(_ uiView: WKWebView) {
+        uiView.evaluateJavaScript("playVideo();")
+    }
+    
+    private func pause(_ uiView: WKWebView) {
+        uiView.evaluateJavaScript("pauseVideo();")
+    }
+    
+    private func seek(_ uiView: WKWebView, time: TimeInterval) {
+        uiView.evaluateJavaScript("seekTo(\(time));")
+    }
+    
+    private func fetchCurrentTime(_ uiView: WKWebView, completion: @escaping (TimeInterval) -> ()) {
+        uiView.evaluateJavaScript("getCurrentTime();") { (result, error) in
+            if error != nil {
+                completion(0)
+                return
+            }
+            if let currentTime = result as? TimeInterval {
+                completion(currentTime)
+            } else {
+                completion(0)
+            }
+        }
     }
     
     private func webViewConfig(context: Context) -> WKWebViewConfiguration {
@@ -173,11 +185,14 @@ struct YouTubeWebView: UIViewRepresentable {
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
         var player;
+        var currentTimeInterval;
+
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
                 videoId: '\(videoId ?? "")',
                 events: {
-                    'onReady': onPlayerReady
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
                 },
                 playerVars: {
                     'playsinline': 1,
@@ -196,22 +211,62 @@ struct YouTubeWebView: UIViewRepresentable {
             }
         }
         
+        function playVideo() {
+            if(player && player.playVideo) {
+                player.playVideo();
+            }
+        }
+        
+        function pauseVideo() {
+            if(player && player.pauseVideo) {
+                player.pauseVideo();
+            }
+        }
+        
+        function getCurrentTime() {
+            if(player && player.getCurrentTime) {
+                return player.getCurrentTime();
+            }
+            return 0;
+        }
+        
+        function startScheduler() {
+            if (!currentTimeInterval) {
+                currentTimeInterval = setInterval(function() {
+                    var currentTime = getCurrentTime();
+                    window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('CurrentTime: ' + currentTime);
+                }, 1000);
+            }
+        }
+        
+        function stopScheduler() {
+            if (currentTimeInterval) {
+                clearInterval(currentTimeInterval);
+                currentTimeInterval = null;
+                var currentTime = getCurrentTime();
+                window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('CurrentTime: ' + currentTime);
+            }
+        }
+        
         function onPlayerStateChange(event) {
             switch(event.data) {
                 case YT.PlayerState.UNSTARTED:
-                    window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('unstarted');
-                    break;
-                case YT.PlayerState.ENDED:
-                    window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('ended');
+                    window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('PlayerState: unstarted');
                     break;
                 case YT.PlayerState.PLAYING:
-                    window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('playing');
+                    window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('PlayerState: playing');
+                    startScheduler();
+                    break;
+                case YT.PlayerState.ENDED:
+                    window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('PlayerState: ended');
+                    stopScheduler();
                     break;
                 case YT.PlayerState.PAUSED:
-                    window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('paused');
+                    window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('PlayerState: paused');
+                    stopScheduler();
                     break;
                 case YT.PlayerState.BUFFERING:
-                    window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('buffering');
+                    window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('PlayerState: buffering');
                     break;
             }
         }
@@ -225,6 +280,7 @@ struct YouTubeWebView: UIViewRepresentable {
         context.coordinator.previousAutoplay = autoplay
         context.coordinator.previousPlaysinline = autoplay
         context.coordinator.previousVideoLink = videoLink
+        context.coordinator.previousCurrentTime = currentTime
     }
     
     private func extractVideoId(from url: String) -> String? {
@@ -251,10 +307,13 @@ struct YouTubeWebView: UIViewRepresentable {
         var parent: YouTubeWebView
         weak var webView: WKWebView?
         
+        var state: PlayerState?
+        
         var previousAutoplay: Int?
         var previousPlaysinline: Int?
         var previousVideoLink: String?
-        var previousState: PlayerState?
+        var previousIsPlaying: Bool?
+        var previousCurrentTime: TimeInterval?
         
         init(_ parent: YouTubeWebView) {
             self.parent = parent
@@ -262,9 +321,18 @@ struct YouTubeWebView: UIViewRepresentable {
         
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard let messageBody = message.body as? String else { return }
-            let state = PlayerState(rawValue: messageBody) ?? .unstarted
-            parent.state = state
-            parent.onStateChange?(state)
+            
+            if messageBody.contains("PlayerState: ") {
+                let data = messageBody.replacingOccurrences(of: "PlayerState: ", with: "")
+                let state = PlayerState(rawValue: data) ?? .unstarted
+                self.state = state
+                parent.onStateChange?(state)
+            } else if messageBody.contains("CurrentTime: ") {
+                let data = messageBody.replacingOccurrences(of: "CurrentTime: ", with: "")
+                let time = TimeInterval(data) ?? 0
+                print(time)
+                //self.parent.currentTime = time
+            }
         }
     }
 }
