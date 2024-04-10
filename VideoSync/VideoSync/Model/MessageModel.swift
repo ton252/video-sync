@@ -6,14 +6,15 @@
 //
 
 import Foundation
+import MultipeerConnectivity
 
 enum MessageType: Codable {
     case message
     case system
 }
 
-struct MessageModel: Codable {
-    let id: String
+class MessageModel: Codable {
+    var id: String!
     let body: String?
     let type: MessageType
     var data: [String: Any]?
@@ -22,20 +23,18 @@ struct MessageModel: Codable {
         case id, body, type, data
     }
     
-    init(id: String?, body: String?, type: MessageType = .message, data: [String: Any]?) {
-        self.id = id ?? UUID().uuidString
+    init(body: String?, type: MessageType = .message, data: [String: Any]?) {
         self.body = body
         self.type = type
         self.data = data
     }
     
-    init(from decoder: Decoder) throws {
+    required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         type = try container.decode(MessageType.self, forKey: .type)
         body = try container.decodeIfPresent(String.self, forKey: .body)
         
-        // Decode `data` as Data, then convert to [String: Any]
         if let rawData = try container.decodeIfPresent(Data.self, forKey: .data) {
             data = try JSONSerialization.jsonObject(with: rawData, options: []) as? [String: Any]
         } else {

@@ -9,11 +9,9 @@ import Foundation
 import MultipeerConnectivity
 
 class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCBrowserViewControllerDelegate, MCNearbyServiceAdvertiserDelegate {
-    @Published var messages: [String] = []
+    @Published var messages: [MessageModel] = []
     @Published var showBrowser = false
-    
-    var onSystem: ((String) -> ())?
-    
+        
     var peerID: MCPeerID
     var mcSession: MCSession
     var serviceAdvertiser: MCNearbyServiceAdvertiser?
@@ -42,12 +40,15 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCBrowserViewC
         showBrowser = true
     }
     
-    func sendMessage(_ message: String) {
-        guard let data = message.data(using: .utf8) else { return }
+    func sendMessage(_ message: MessageModel) {
+        message.id = UUID().uuidString
+        
+        let encoder = JSONEncoder()
+        guard let data = try? encoder.encode(message) else { return }
         try? mcSession.send(data, toPeers: mcSession.connectedPeers, with: .reliable)
         
         DispatchQueue.main.async {
-            self.messages.append("Я: \(message)")
+            self.messages.append(message)
         }
     }
     
