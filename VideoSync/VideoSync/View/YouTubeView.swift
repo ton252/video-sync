@@ -23,22 +23,7 @@ struct YouTubeView: View {
                 })
             }
         }
-        .aspectRatio(16/9, contentMode: .fit)
         .frame(maxWidth: .infinity)
-        .onAppear() {
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
-//                self.currentTime = 60
-//            }
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
-//                self.isPlaying = false
-//            }
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 20.0) {
-//                self.isPlaying = true
-//            }
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 16.0) {
-//                self.currentTime = 30
-//            }
-        }
     }
 }
 

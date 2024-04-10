@@ -14,6 +14,7 @@ enum ChatConnectionType {
 
 struct ChatView: View {
     let connectionType: ChatConnectionType
+    
     @ObservedObject var chatManager = ChatManager()
     @State private var messageText: String = ""
     @State private var videoLink: String? = "https://youtu.be/uNiQJhz7iQU?si=BkVMrOVTfQMYmhDZ"
@@ -21,12 +22,14 @@ struct ChatView: View {
     var body: some View {
         VStack {
             YouTubeView(videoLink: $videoLink)
+                .aspectRatio(16/9, contentMode: .fit)
+                .layoutPriority(1)
             ScrollView {
                 ForEach(chatManager.messages, id: \.self) { message in
                     Text(message).padding()
-                }.frame(width: UIScreen.main.bounds.width)
+                }
+                .frame(width: UIScreen.main.bounds.width)
             }
-            
             HStack {
                 TextField("Введите сообщение здесь", text: $messageText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
