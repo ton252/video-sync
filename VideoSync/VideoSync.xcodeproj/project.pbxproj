@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		7113FF2E2BC6E75100DC7B3F /* CommandPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7113FF2D2BC6E75100DC7B3F /* CommandPerformer.swift */; };
 		7113FF322BC7EF7500DC7B3F /* CommandPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7113FF312BC7EF7500DC7B3F /* CommandPanel.swift */; };
+		711DF7342BC8816B00B759FB /* ContentView2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711DF7332BC8816B00B759FB /* ContentView2.swift */; };
 		715E59692BC82D4C001C2F66 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 715E59682BC82D4C001C2F66 /* Colors.swift */; };
 		715E596B2BC832F2001C2F66 /* SafeArea.swift in Sources */ = {isa = PBXBuildFile; fileRef = 715E596A2BC832F2001C2F66 /* SafeArea.swift */; };
 		71FF5B892BC687BA0023F0D1 /* ChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FF5B882BC687BA0023F0D1 /* ChatManager.swift */; };
@@ -45,6 +46,7 @@
 /* Begin PBXFileReference section */
 		7113FF2D2BC6E75100DC7B3F /* CommandPerformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPerformer.swift; sourceTree = "<group>"; };
 		7113FF312BC7EF7500DC7B3F /* CommandPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPanel.swift; sourceTree = "<group>"; };
+		711DF7332BC8816B00B759FB /* ContentView2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView2.swift; sourceTree = "<group>"; };
 		715E59682BC82D4C001C2F66 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
 		715E596A2BC832F2001C2F66 /* SafeArea.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeArea.swift; sourceTree = "<group>"; };
 		71FF5B872BC5F5990023F0D1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -161,6 +163,7 @@
 				7206E5BD2BC421B60072467D /* Assets.xcassets */,
 				7206E5BF2BC421B60072467D /* VideoSync.entitlements */,
 				7206E5C02BC421B60072467D /* Preview Content */,
+				711DF7332BC8816B00B759FB /* ContentView2.swift */,
 			);
 			path = VideoSync;
 			sourceTree = "<group>";
@@ -322,6 +325,7 @@
 			files = (
 				7206E5BC2BC421B50072467D /* ContentView.swift in Sources */,
 				715E59692BC82D4C001C2F66 /* Colors.swift in Sources */,
+				711DF7342BC8816B00B759FB /* ContentView2.swift in Sources */,
 				71FF5B8F2BC68F5D0023F0D1 /* YouTubeView.swift in Sources */,
 				715E596B2BC832F2001C2F66 /* SafeArea.swift in Sources */,
 				7113FF2E2BC6E75100DC7B3F /* CommandPerformer.swift in Sources */,

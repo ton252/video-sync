@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 class ChatViewModel: ObservableObject {
     @Published var videoLink: String? = nil
@@ -21,6 +22,8 @@ class ChatViewModel: ObservableObject {
         CommandItem(command: "/start_video"),
     ]
     
+    private var cancellable: [AnyCancellable] = []
+    
     private let commandPerformer = CommandPerformer()
     
     init(chatManager: ChatManager) {
@@ -28,18 +31,22 @@ class ChatViewModel: ObservableObject {
         setupBindings()
     }
     
+    deinit {
+        cancellable.forEach() { $0.cancel() }
+    }
+    
     private func setupBindings() {
-        chatManager.onMessageUpdate = { [weak self] message in
+        let messageSubs = chatManager.onMessageUpdate.sink { [weak self] message in
             self?.messages.append(message)
             self?.commandPerformer.perform(message: message)
         }
+        cancellable.append(messageSubs)
         commandPerformer.onUpdateVideoLink = { [weak self] message, videoLink in
             self?.videoLink = videoLink
         }
     }
     
     func sendMessage(_ msg: MessageModel) {
-        messages.append(msg)
         chatManager.sendMessage(msg)
     }
     

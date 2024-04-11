@@ -7,15 +7,14 @@
 
 import Foundation
 import MultipeerConnectivity
+import Combine
 
 class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate {
     var peerID: MCPeerID
     var mcSession: MCSession
     var serviceAdvertiser: MCNearbyServiceAdvertiser?
-    var onMessageUpdate: ((MessageModel) -> ())?
-    
-    static let shared = ChatManager()
-    
+    let onMessageUpdate = PassthroughSubject<MessageModel, Never>()
+        
     override init() {
         self.peerID = MCPeerID(displayName: UIDevice.current.name)
         self.mcSession = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .required)
@@ -25,7 +24,7 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
         self.serviceAdvertiser = MCNearbyServiceAdvertiser(peer: peerID, discoveryInfo: nil, serviceType: "p2p-chat")
         self.serviceAdvertiser?.delegate = self
     }
-    
+        
     func startHosting() {
         serviceAdvertiser?.startAdvertisingPeer()
     }
@@ -47,7 +46,7 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
         try? mcSession.send(data, toPeers: mcSession.connectedPeers, with: .reliable)
         
         DispatchQueue.main.async {
-            self.onMessageUpdate?(message)
+            self.onMessageUpdate.send(message)
         }
     }
     
@@ -70,7 +69,7 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
         guard let message = try? decoder.decode(MessageModel.self, from: data) else { return }
         
         DispatchQueue.main.async {
-            self.onMessageUpdate?(message)
+            self.onMessageUpdate.send(message)
         }
     }
     
