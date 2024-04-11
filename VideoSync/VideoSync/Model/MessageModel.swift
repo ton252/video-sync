@@ -14,7 +14,7 @@ enum MessageType: Codable {
 }
 
 class MessageModel: Codable {
-    var id: String!
+    var id: String
     var senderID: String!
     let body: String?
     let type: MessageType
@@ -32,14 +32,15 @@ class MessageModel: Codable {
         self.body = body
         self.type = type
         self.data = data
+        self.id = UUID().uuidString
     }
     
     required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         senderID = try container.decode(String.self, forKey: .senderID)
-        type = try container.decode(MessageType.self, forKey: .type)
         body = try container.decodeIfPresent(String.self, forKey: .body)
+        type = try container.decode(MessageType.self, forKey: .type)
         
         if let rawData = try container.decodeIfPresent(Data.self, forKey: .data) {
             data = try JSONSerialization.jsonObject(with: rawData, options: []) as? [String: Any]

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var chatManager = ChatManager()
+    
     @State var showBrowser = false
     @State var isChatHostPresented = false
     @State var isChatPeerPresented = false
@@ -35,10 +36,10 @@ struct ContentView: View {
                 }
             }.navigationDestination(
                 isPresented: $isChatHostPresented) {
-                    ChatView(connectionType: .host)
+                    ChatView(viewModel: ChatViewModel(chatManager: chatManager))
             }.navigationDestination(
                 isPresented: $isChatPeerPresented) {
-                    ChatView(connectionType: .peer)
+                    ChatView(viewModel: ChatViewModel(chatManager: chatManager))
             }
         }
     }

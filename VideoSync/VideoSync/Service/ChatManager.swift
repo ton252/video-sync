@@ -9,8 +9,6 @@ import Foundation
 import MultipeerConnectivity
 
 class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate {
-    @Published var messages: [MessageModel] = []
-        
     var peerID: MCPeerID
     var mcSession: MCSession
     var serviceAdvertiser: MCNearbyServiceAdvertiser?
@@ -48,16 +46,7 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
         guard let data = try? encoder.encode(message) else { return }
         try? mcSession.send(data, toPeers: mcSession.connectedPeers, with: .reliable)
         
-        print(mcSession.connectedPeers)
-        
-        do {
-            try mcSession.send(data, toPeers: mcSession.connectedPeers, with: .reliable)
-        } catch let error {
-            print(error)
-        }
-        
         DispatchQueue.main.async {
-            self.messages.append(message)
             self.onMessageUpdate?(message)
         }
     }
@@ -81,7 +70,6 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
         guard let message = try? decoder.decode(MessageModel.self, from: data) else { return }
         
         DispatchQueue.main.async {
-            self.messages.append(message)
             self.onMessageUpdate?(message)
         }
     }
