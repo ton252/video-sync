@@ -10,15 +10,18 @@ import WebKit
 
 struct YouTubeView: View {
     @Binding var videoLink: String?
-    @State var currentTime: TimeInterval = 0.0
-    let controller = YouTubeWebViewController()
+    @State private var currentTime: TimeInterval = 0.0
+    private let controller = YouTubeWebViewController()
     
     var body: some View {
         ZStack {
             Color.black
-            if let videoLink = videoLink {
+            if videoLink != nil {
                 YouTubeWebView(
-                    videoLink: Binding.constant(videoLink),
+                    videoLink:  Binding<String>(
+                        get: { videoLink ?? "" },
+                        set: { videoLink = $0 }
+                    ),
                     controller: controller,
                     onStateChange: {
                         state in
@@ -78,6 +81,7 @@ struct YouTubeWebView: UIViewRepresentable {
     private let controller: YouTubeWebViewController
         
     private var videoId: String? {
+        let id = extractVideoId(from: videoLink)
         return extractVideoId(from: videoLink)
     }
             
@@ -256,6 +260,11 @@ struct YouTubeWebView: UIViewRepresentable {
     }
     
     private func extractVideoId(from url: String) -> String? {
+        let urlString = URLComponents(string: url).flatMap { urlComp in
+            var comp = urlComp
+            comp.queryItems = nil
+            return comp.string
+        } ?? ""
         let patterns = [
             "(?<=watch\\?v=)[^#&?\\n]*",            // Standard URL
             "(?<=youtu.be/)[^#&?\\n]*",             // Shortened URL
@@ -265,10 +274,10 @@ struct YouTubeWebView: UIViewRepresentable {
         
         for pattern in patterns {
             let regex = try? NSRegularExpression(pattern: pattern)
-            let range = NSRange(location: 0, length: url.utf16.count)
-            if let match = regex?.firstMatch(in: url, options: [], range: range) {
-                if let range = Range(match.range, in: url) {
-                    return String(url[range])
+            let range = NSRange(location: 0, length: urlString.utf16.count)
+            if let match = regex?.firstMatch(in: urlString, options: [], range: range) {
+                if let range = Range(match.range, in: urlString) {
+                    return String(urlString[range])
                 }
             }
         }

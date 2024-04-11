@@ -11,13 +11,14 @@ import MultipeerConnectivity
 
 // MARK: - MCBrowserViewControllerWrapper
 struct MCBrowserViewControllerWrapper: UIViewControllerRepresentable {
-    @Environment(\.presentationMode) var presentationMode
+    @Binding var showBrowser: Bool
     @ObservedObject var chatManager: ChatManager
+    @Environment(\.presentationMode) var presentationMode
     var onComplete: (() -> ())?
 
     func makeUIViewController(context: Context) -> MCBrowserViewController {
         let browser = MCBrowserViewController(serviceType: "p2p-chat", session: chatManager.mcSession)
-        browser.delegate = chatManager
+        browser.delegate = context.coordinator
         return browser
     }
     
@@ -40,13 +41,13 @@ struct MCBrowserViewControllerWrapper: UIViewControllerRepresentable {
         
         func browserViewControllerDidFinish(_ browserViewController: MCBrowserViewController) {
             parent.presentationMode.wrappedValue.dismiss()
-            chatManager.showBrowser = false
+            parent.showBrowser = false
+            parent.onComplete?()
         }
         
         func browserViewControllerWasCancelled(_ browserViewController: MCBrowserViewController) {
             parent.presentationMode.wrappedValue.dismiss()
-            chatManager.showBrowser = false
-            parent.onComplete?()
+            parent.showBrowser = false
         }
     }
 }

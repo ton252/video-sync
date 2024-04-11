@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var chatManager = ChatManager()
+    @State var showBrowser = false
     @State var isChatHostPresented = false
     @State var isChatPeerPresented = false
     
@@ -22,10 +23,14 @@ struct ContentView: View {
                 Spacer().frame(height: 8)
                 Button("Присоединиться") {
                     chatManager.joinSession()
+                    showBrowser = true
                 }.padding()
             }
-            .sheet(isPresented: $chatManager.showBrowser) {
-                MCBrowserViewControllerWrapper(chatManager: chatManager) {
+            .sheet(isPresented: $showBrowser) {
+                MCBrowserViewControllerWrapper(
+                    showBrowser: $showBrowser,
+                    chatManager: chatManager
+                ) {
                     isChatPeerPresented = true
                 }
             }.navigationDestination(

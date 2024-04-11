@@ -15,12 +15,13 @@ enum MessageType: Codable {
 
 class MessageModel: Codable {
     var id: String!
+    var senderID: String!
     let body: String?
     let type: MessageType
     var data: [String: Any]?
     
     enum CodingKeys: String, CodingKey {
-        case id, body, type, data
+        case id, senderID, body, type, data
     }
     
     init(
@@ -36,6 +37,7 @@ class MessageModel: Codable {
     required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
+        senderID = try container.decode(String.self, forKey: .senderID)
         type = try container.decode(MessageType.self, forKey: .type)
         body = try container.decodeIfPresent(String.self, forKey: .body)
         
@@ -49,6 +51,7 @@ class MessageModel: Codable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
+        try container.encode(senderID, forKey: .senderID)
         try container.encode(type, forKey: .type)
         try container.encodeIfPresent(body, forKey: .body)
         

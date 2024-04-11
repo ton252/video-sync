@@ -8,13 +8,13 @@
 import Foundation
 import MultipeerConnectivity
 
-class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCBrowserViewControllerDelegate, MCNearbyServiceAdvertiserDelegate {
+class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate {
     @Published var messages: [MessageModel] = []
-    @Published var showBrowser = false
         
     var peerID: MCPeerID
     var mcSession: MCSession
     var serviceAdvertiser: MCNearbyServiceAdvertiser?
+    var onMessageUpdate: ((MessageModel) -> ())?
     
     static let shared = ChatManager()
     
@@ -37,18 +37,28 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCBrowserViewC
     }
     
     func joinSession() {
-        showBrowser = true
+        //
     }
     
     func sendMessage(_ message: MessageModel) {
         message.id = UUID().uuidString
+        message.senderID = UIDevice.current.identifierForVendor?.uuidString ?? ""
         
         let encoder = JSONEncoder()
         guard let data = try? encoder.encode(message) else { return }
         try? mcSession.send(data, toPeers: mcSession.connectedPeers, with: .reliable)
         
+        print(mcSession.connectedPeers)
+        
+        do {
+            try mcSession.send(data, toPeers: mcSession.connectedPeers, with: .reliable)
+        } catch let error {
+            print(error)
+        }
+        
         DispatchQueue.main.async {
             self.messages.append(message)
+            self.onMessageUpdate?(message)
         }
     }
     
@@ -72,6 +82,7 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCBrowserViewC
         
         DispatchQueue.main.async {
             self.messages.append(message)
+            self.onMessageUpdate?(message)
         }
     }
     
@@ -88,14 +99,5 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCBrowserViewC
     // MARK: MCNearbyServiceAdvertiserDelegate
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
         invitationHandler(true, self.mcSession)
-    }
-    
-    // MARK: MCBrowserViewControllerDelegate
-    func browserViewControllerDidFinish(_ browserViewController: MCBrowserViewController) {
-        showBrowser = false
-    }
-    
-    func browserViewControllerWasCancelled(_ browserViewController: MCBrowserViewController) {
-        showBrowser = false
     }
 }
