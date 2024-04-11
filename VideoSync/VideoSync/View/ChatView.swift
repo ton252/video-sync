@@ -11,7 +11,6 @@ import Combine
 class ChatViewModel: ObservableObject {
     @Published var videoLink: String? = nil
     @Published var messages: [MessageModel] = []
-    @Published var chatManager: ChatManager
     
     var filtredMessages: [MessageModel] {
         return messages.filter() { $0.type == .message }
@@ -22,9 +21,9 @@ class ChatViewModel: ObservableObject {
         CommandItem(command: "/start_video"),
     ]
     
-    private var cancellable: [AnyCancellable] = []
-    
+    private let chatManager: ChatManager
     private let commandPerformer = CommandPerformer()
+    private var cancellable: [AnyCancellable] = []
     
     init(chatManager: ChatManager) {
         self.chatManager = chatManager
@@ -54,6 +53,10 @@ class ChatViewModel: ObservableObject {
         videoLink = nil
         messages = []
     }
+    
+    func isMessageOutgoing(_ message: MessageModel) -> Bool {
+        return chatManager.isMessageOutgoing(message)
+    }
 }
 
 struct ChatView: View {
@@ -78,9 +81,15 @@ struct ChatView: View {
                 .aspectRatio(16/9, contentMode: .fit)
                 .layoutPriority(1)
                 ScrollView() {
-                    ForEach(viewModel.filtredMessages, id: \.id) { message in
-                        Text(message.body ?? "").padding()
+                    VStack(spacing: 16) {
+                        ForEach(viewModel.filtredMessages, id: \.id) { message in
+                            MessageView(
+                                text: message.body,
+                                isOutgoing: viewModel.isMessageOutgoing(message)
+                            ).padding(.zero)
+                        }
                     }
+                    .padding(.top, 16)
                     .frame(width: UIScreen.main.bounds.width)
                 }
                 .scrollDismissesKeyboard(.interactively)

@@ -14,6 +14,10 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
     var mcSession: MCSession
     var serviceAdvertiser: MCNearbyServiceAdvertiser?
     let onMessageUpdate = PassthroughSubject<MessageModel, Never>()
+    
+    var currentUserID: String {
+        return UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
+    }
         
     override init() {
         self.peerID = MCPeerID(displayName: UIDevice.current.name)
@@ -39,7 +43,7 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
     
     func sendMessage(_ message: MessageModel) {
         message.id = UUID().uuidString
-        message.senderID = UIDevice.current.identifierForVendor?.uuidString ?? ""
+        message.senderID = currentUserID
         
         let encoder = JSONEncoder()
         guard let data = try? encoder.encode(message) else { return }
@@ -48,6 +52,10 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
         DispatchQueue.main.async {
             self.onMessageUpdate.send(message)
         }
+    }
+    
+    func isMessageOutgoing(_ message: MessageModel) -> Bool {
+        return message.senderID == currentUserID
     }
     
     // MARK: MCSessionDelegate

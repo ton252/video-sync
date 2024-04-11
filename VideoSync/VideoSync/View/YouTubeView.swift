@@ -81,7 +81,6 @@ struct YouTubeWebView: UIViewRepresentable {
     private let controller: YouTubeWebViewController
         
     private var videoId: String? {
-        let id = extractVideoId(from: videoLink)
         return extractVideoId(from: videoLink)
     }
             
