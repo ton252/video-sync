@@ -25,10 +25,10 @@ struct CommandPanel: View {
     var onTap: ((CommandItem) -> ())?
     
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             Color.gray.opacity(0.1).frame(height: 1)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack {
+                HStack(alignment: .center) {
                     ForEach(items, id: \.id) { item in
                         Button(action: {
                             onTap?(item)
@@ -37,14 +37,12 @@ struct CommandPanel: View {
                                 .padding()
                                 .foregroundColor(.blue)
                         }
-                        .frame(height: 30)
+                        .frame(height: 40)
                     }
                 }
-                .padding()
-                .frame(height: 32)
+                .frame(height: 40)
             }
-            Color.gray.opacity(0.1).frame(height: 1)
         }
-        .background(Color.white)
+        .background(Color(hex: "F5F5F5"))
     }
 }

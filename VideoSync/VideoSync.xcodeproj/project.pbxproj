@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		7113FF2E2BC6E75100DC7B3F /* CommandPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7113FF2D2BC6E75100DC7B3F /* CommandPerformer.swift */; };
 		7113FF322BC7EF7500DC7B3F /* CommandPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7113FF312BC7EF7500DC7B3F /* CommandPanel.swift */; };
+		715E59692BC82D4C001C2F66 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 715E59682BC82D4C001C2F66 /* Colors.swift */; };
+		715E596B2BC832F2001C2F66 /* SafeArea.swift in Sources */ = {isa = PBXBuildFile; fileRef = 715E596A2BC832F2001C2F66 /* SafeArea.swift */; };
 		71FF5B892BC687BA0023F0D1 /* ChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FF5B882BC687BA0023F0D1 /* ChatManager.swift */; };
 		71FF5B8B2BC688220023F0D1 /* MCBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FF5B8A2BC688220023F0D1 /* MCBrowserView.swift */; };
 		71FF5B8F2BC68F5D0023F0D1 /* YouTubeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FF5B8E2BC68F5D0023F0D1 /* YouTubeView.swift */; };
@@ -43,6 +45,8 @@
 /* Begin PBXFileReference section */
 		7113FF2D2BC6E75100DC7B3F /* CommandPerformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPerformer.swift; sourceTree = "<group>"; };
 		7113FF312BC7EF7500DC7B3F /* CommandPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPanel.swift; sourceTree = "<group>"; };
+		715E59682BC82D4C001C2F66 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
+		715E596A2BC832F2001C2F66 /* SafeArea.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeArea.swift; sourceTree = "<group>"; };
 		71FF5B872BC5F5990023F0D1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		71FF5B882BC687BA0023F0D1 /* ChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManager.swift; sourceTree = "<group>"; };
 		71FF5B8A2BC688220023F0D1 /* MCBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCBrowserView.swift; sourceTree = "<group>"; };
@@ -87,6 +91,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		715E59672BC82D3F001C2F66 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				715E59682BC82D4C001C2F66 /* Colors.swift */,
+				715E596A2BC832F2001C2F66 /* SafeArea.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
 		71FF5B8C2BC688350023F0D1 /* View */ = {
 			isa = PBXGroup;
 			children = (
@@ -139,6 +152,7 @@
 		7206E5B82BC421B50072467D /* VideoSync */ = {
 			isa = PBXGroup;
 			children = (
+				715E59672BC82D3F001C2F66 /* Extensions */,
 				71FF5B8D2BC688590023F0D1 /* Service */,
 				71FF5B932BC693E30023F0D1 /* Model */,
 				71FF5B8C2BC688350023F0D1 /* View */,
@@ -307,7 +321,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				7206E5BC2BC421B50072467D /* ContentView.swift in Sources */,
+				715E59692BC82D4C001C2F66 /* Colors.swift in Sources */,
 				71FF5B8F2BC68F5D0023F0D1 /* YouTubeView.swift in Sources */,
+				715E596B2BC832F2001C2F66 /* SafeArea.swift in Sources */,
 				7113FF2E2BC6E75100DC7B3F /* CommandPerformer.swift in Sources */,
 				71FF5B952BC693F90023F0D1 /* MessageModel.swift in Sources */,
 				7113FF322BC7EF7500DC7B3F /* CommandPanel.swift in Sources */,
