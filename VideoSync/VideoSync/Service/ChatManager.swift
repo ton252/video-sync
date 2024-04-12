@@ -10,17 +10,21 @@ import MultipeerConnectivity
 import Combine
 
 class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate {
-    var peerID: MCPeerID
+    var peerID: ChatPeerID
     var mcSession: MCSession
     var serviceAdvertiser: MCNearbyServiceAdvertiser?
     let onMessageUpdate = PassthroughSubject<MessageModel, Never>()
+    let onStateDidChanged = PassthroughSubject<(MCPeerID, MCSessionState), Never>()
     
     var currentUserID: String {
-        return UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
+        return UIDevice.current.userId
     }
         
     override init() {
-        self.peerID = MCPeerID(displayName: UIDevice.current.name)
+        self.peerID = ChatPeerID(
+            userId: UIDevice.current.userId,
+            displayName: UIDevice.current.name
+        )
         self.mcSession = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .required)
         super.init()
         self.mcSession.delegate = self
@@ -70,6 +74,7 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
         @unknown default:
             print("Unknown state received: \(peerID.displayName)")
         }
+        onStateDidChanged.send((peerID, state))
     }
     
     func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
@@ -94,5 +99,11 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
     // MARK: MCNearbyServiceAdvertiserDelegate
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
         invitationHandler(true, self.mcSession)
+    }
+}
+
+fileprivate extension UIDevice {
+    var userId: String {
+        return identifierForVendor?.uuidString ?? "unknown"
     }
 }

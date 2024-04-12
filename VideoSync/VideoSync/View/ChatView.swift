@@ -8,57 +8,6 @@
 import SwiftUI
 import Combine
 
-class ChatViewModel: ObservableObject {
-    @Published var videoLink: String? = nil
-    @Published var messages: [MessageModel] = []
-    
-    var filtredMessages: [MessageModel] {
-        return messages.filter() { $0.type == .message }
-    }
-    
-    @Published fileprivate var messageText: String = ""
-    @Published fileprivate var commands = [
-        CommandItem(command: "/start_video"),
-    ]
-    
-    private let chatManager: ChatManager
-    private let commandPerformer = CommandPerformer()
-    private var cancellable: [AnyCancellable] = []
-    
-    init(chatManager: ChatManager) {
-        self.chatManager = chatManager
-        setupBindings()
-    }
-    
-    deinit {
-        cancellable.forEach() { $0.cancel() }
-    }
-    
-    private func setupBindings() {
-        let messageSubs = chatManager.onMessageUpdate.sink { [weak self] message in
-            self?.messages.append(message)
-            self?.commandPerformer.perform(message: message)
-        }
-        cancellable.append(messageSubs)
-        commandPerformer.onUpdateVideoLink = { [weak self] message, videoLink in
-            self?.videoLink = videoLink
-        }
-    }
-    
-    func sendMessage(_ msg: MessageModel) {
-        chatManager.sendMessage(msg)
-    }
-    
-    func clear() {
-        videoLink = nil
-        messages = []
-    }
-    
-    func isMessageOutgoing(_ message: MessageModel) -> Bool {
-        return chatManager.isMessageOutgoing(message)
-    }
-}
-
 struct ChatView: View {
     @ObservedObject var viewModel: ChatViewModel
     @FocusState private var isTextFieldFocused: Bool
@@ -77,7 +26,10 @@ struct ChatView: View {
                 YouTubeView(videoLink: Binding<String?>(
                     get: { viewModel.videoLink },
                     set: { viewModel.videoLink = $0 }
-                ))
+                ), allowContols: Binding<Bool>(
+                    get: { viewModel.allowPlayerControl },
+                    set: { viewModel.allowPlayerControl = $0 }
+                ), controller: viewModel.videoController)
                 .aspectRatio(16/9, contentMode: .fit)
                 .layoutPriority(1)
                 ScrollView() {
@@ -89,7 +41,7 @@ struct ChatView: View {
                             ).padding(.zero)
                         }
                     }
-                    .padding(.top, 16)
+                    .padding(EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16))
                     .frame(width: UIScreen.main.bounds.width)
                 }
                 .scrollDismissesKeyboard(.interactively)
@@ -138,5 +90,64 @@ struct ChatView: View {
     
     private func dismissKeyboard() {
         isTextFieldFocused = false
+    }
+}
+
+class ChatViewModel: ObservableObject {
+    @Published var videoLink: String? = nil
+    @Published var messages: [MessageModel] = []
+    @Published var allowPlayerControl: Bool = false
+    
+    let videoController = YouTubeWebViewController()
+    
+    var filtredMessages: [MessageModel] {
+        return messages.filter() { $0.type == .message }
+    }
+    
+    @Published fileprivate var messageText: String = ""
+    @Published fileprivate var commands = [
+        CommandItem(command: "/start_video"),
+    ]
+    
+    private let chatManager: ChatManager
+    private let commandPerformer = CommandPerformer()
+    private var cancellable: [AnyCancellable] = []
+    
+    init(chatManager: ChatManager) {
+        self.chatManager = chatManager
+        setupBindings()
+    }
+    
+    deinit {
+        cancellable.forEach() { $0.cancel() }
+    }
+    
+    private func setupBindings() {
+        let currentUserID = chatManager.currentUserID
+        let messageSubs = chatManager.onMessageUpdate.sink { [weak self] message in
+            self?.messages.append(message)
+            self?.commandPerformer.perform(message: message)
+        }
+        cancellable.append(messageSubs)
+        commandPerformer.onUpdateVideoLink = { [weak self] message, videoLink in
+            self?.videoLink = videoLink
+            self?.allowPlayerControl = message.senderID == currentUserID
+            if self?.videoLink == videoLink {
+                self?.videoController.restart()
+            }
+        }
+    }
+    
+    func sendMessage(_ msg: MessageModel) {
+        chatManager.sendMessage(msg)
+    }
+    
+    func clear() {
+        videoLink = nil
+        messages = []
+    }
+    
+    func isMessageOutgoing(_ message: MessageModel) -> Bool {
+        return chatManager.isMessageOutgoing(message)
     }
 }

@@ -10,8 +10,10 @@ import WebKit
 
 struct YouTubeView: View {
     @Binding var videoLink: String?
+    @Binding var allowContols: Bool
+    let controller: YouTubeWebViewController
+
     @State private var currentTime: TimeInterval = 0.0
-    private let controller = YouTubeWebViewController()
     
     var body: some View {
         ZStack {
@@ -29,6 +31,7 @@ struct YouTubeView: View {
             }
         }
         .frame(maxWidth: .infinity)
+        .allowsHitTesting(allowContols)
     }
 }
 
@@ -62,6 +65,10 @@ class YouTubeWebViewController {
     
     func pause()  {
         coordinator?.pause()
+    }
+    
+    func restart() {
+        coordinator?.restart()
     }
     
     func seek(time: TimeInterval) {
@@ -201,6 +208,13 @@ struct YouTubeWebView: UIViewRepresentable {
             }
         }
         
+        function restartVideo() {
+            if(player && player.seekTo && player.playVideo) {
+                player.seekTo(0, true);
+                player.playVideo();
+            }
+        }
+        
         function getCurrentTime() {
             if(player && player.getCurrentTime) {
                 return player.getCurrentTime();
@@ -321,6 +335,10 @@ struct YouTubeWebView: UIViewRepresentable {
         
         func seek(time: TimeInterval) {
             webView?.evaluateJavaScript("seekTo(\(time));")
+        }
+        
+        func restart() {
+            webView?.evaluateJavaScript("restartVideo();")
         }
         
         private func fetchCurrentTime(completion: @escaping (TimeInterval) -> ()) {
