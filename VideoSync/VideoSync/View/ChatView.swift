@@ -23,15 +23,20 @@ struct ChatView: View {
             Color(hex: "F5F5F5").edgesIgnoringSafeArea(.bottom)
             Color.white
             VStack(spacing: 0) {
-                YouTubeView(videoLink: Binding<String?>(
-                    get: { viewModel.videoLink },
-                    set: { viewModel.videoLink = $0 }
-                ), allowContols: Binding<Bool>(
-                    get: { viewModel.allowPlayerControl },
-                    set: { viewModel.allowPlayerControl = $0 }
-                ), controller: viewModel.videoController)
-                .aspectRatio(16/9, contentMode: .fit)
-                .layoutPriority(1)
+                CollapsibleBox(isOpened: $viewModel.isPlayerOpened) {
+//                    Color.black
+//                        .aspectRatio(16/9, contentMode: .fit)
+//                        .layoutPriority(1)
+                    YouTubeView(videoLink: Binding<String?>(
+                        get: { viewModel.videoLink },
+                        set: { viewModel.videoLink = $0 }
+                    ), allowContols: Binding<Bool>(
+                        get: { viewModel.allowPlayerControl },
+                        set: { viewModel.allowPlayerControl = $0 }
+                    ), controller: viewModel.videoController)
+                    .aspectRatio(16/9, contentMode: .fit)
+                    .layoutPriority(1)
+                }
                 ScrollView() {
                     VStack(spacing: 16) {
                         ForEach(viewModel.filtredMessages, id: \.id) { message in
@@ -96,6 +101,7 @@ class ChatViewModel: ObservableObject {
     @Published var videoLink: String? = nil
     @Published var messages: [MessageModel] = []
     @Published var allowPlayerControl: Bool = false
+    @Published var isPlayerOpened: Bool = false
     
     let videoController = YouTubeWebViewController()
     
@@ -143,6 +149,9 @@ class ChatViewModel: ObservableObject {
             if self?.videoLink == videoLink {
                 self?.videoController.restart()
             }
+            withAnimation() {
+                self?.isPlayerOpened = true
+            }
         }
         commandPerformer.onVideoStop = { [weak self] message in
             guard currentUserID == message.senderID else { return }
@@ -153,6 +162,10 @@ class ChatViewModel: ObservableObject {
                 return
             }
             self?.videoLink = nil
+            
+            withAnimation() {
+                self?.isPlayerOpened = false
+            }
         }
     }
     
@@ -161,6 +174,8 @@ class ChatViewModel: ObservableObject {
     }
     
     func clear() {
+        messageText = ""
+        isPlayerOpened = false
         videoLink = nil
         messages = []
     }

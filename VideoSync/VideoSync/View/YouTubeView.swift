@@ -12,7 +12,7 @@ struct YouTubeView: View {
     @Binding var videoLink: String?
     @Binding var allowContols: Bool
     let controller: YouTubeWebViewController
-
+    
     @State private var currentTime: TimeInterval = 0.0
     
     var body: some View {
@@ -25,9 +25,8 @@ struct YouTubeView: View {
                         set: { videoLink = $0 }
                     ),
                     controller: controller,
-                    onStateChange: {
-                        state in
-                })
+                    backgroundColor: .black
+                )
             }
         }
         .frame(maxWidth: .infinity)
@@ -48,7 +47,7 @@ struct PlayerVars {
     var playsinline: Int = 1
 }
 
-class YouTubeWebViewController {
+class YouTubeWebViewController: ObservableObject {
     fileprivate weak var coordinator: YouTubeWebView.Coordinator?
     
     var currentTime: TimeInterval {
@@ -81,37 +80,46 @@ struct YouTubeWebView: UIViewRepresentable {
     
     let autoplay: Int
     let playsinline: Int
-         
-    var onStateChange: ((PlayerState) -> ())?
-    var onTimeChange: ((TimeInterval) -> ())?
+    let backgroundColor: Color?
+    
+    @State var updatingTrigger: Bool = false
     
     private let controller: YouTubeWebViewController
     private let extractor = YouTubeExtractor()
-        
+    
     private var videoId: String? {
         return extractor.extractVideoId(link: videoLink)
     }
-            
+    
     init(
         videoLink: Binding<String>,
         autoplay: Int = 1,
         playsinline: Int = 1,
         controller: YouTubeWebViewController = YouTubeWebViewController(),
-        onStateChange: ((PlayerState) -> ())? = nil
+        backgroundColor: Color?
     ) {
         self._videoLink = videoLink
+        self.backgroundColor = backgroundColor
         
         self.autoplay = autoplay
         self.playsinline = playsinline
         self.controller = controller
-        
-        self.onStateChange = onStateChange
     }
     
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebView(frame: .zero, configuration: webViewConfig(context: context))
+        let backgroundView = UIView()
+
+        webView.addSubview(backgroundView)
+        backgroundView.frame = webView.bounds
+        backgroundView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        
         context.coordinator.webView = webView
+        context.coordinator.backroundView = backgroundView
+        
         updatePreviousValues(context: context)
+        updateBackgroundView(context: context)
+
         webView.loadHTMLString(htmlString, baseURL: nil)
         return webView
     }
@@ -121,6 +129,8 @@ struct YouTubeWebView: UIViewRepresentable {
         if coordinator.previousVideoLink != videoLink {
             uiView.loadHTMLString(htmlString, baseURL: nil)
         }
+        
+        updateBackgroundView(context: context)
         updatePreviousValues(context: context)
     }
     
@@ -140,6 +150,12 @@ struct YouTubeWebView: UIViewRepresentable {
         return configuration
     }
     
+    private func updateBackgroundView(context: Context) {
+        let coordinator = context.coordinator
+        coordinator.backroundView?.backgroundColor = backgroundColor != nil ? UIColor(backgroundColor!) : nil
+        coordinator.backroundView?.isHidden = backgroundColor == nil || coordinator.isBackgroundViewHidden
+    }
+    
     var htmlString: String {
         return """
         <!DOCTYPE html>
@@ -149,7 +165,7 @@ struct YouTubeWebView: UIViewRepresentable {
                 body {
                     margin: 0;
                     padding: 0;
-                    background-color: #FFFFFF;
+                    background-color: #000000;
                     color: white;
                     display: flex;
                     justify-content: center;
@@ -159,6 +175,7 @@ struct YouTubeWebView: UIViewRepresentable {
                 #player {
                     width: 100%;
                     height: 100vh;
+                    background-color: #000000;
                 }
             </style>
         </head>
@@ -169,10 +186,10 @@ struct YouTubeWebView: UIViewRepresentable {
         tag.src = "https://www.youtube.com/iframe_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
+        
         var player;
         var currentTimeInterval;
-
+        
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
                 videoId: '\(videoId ?? "")',
@@ -186,11 +203,12 @@ struct YouTubeWebView: UIViewRepresentable {
                 },
             });
         }
-
+        
         function onPlayerReady(event) {
+            window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('PlayerReady: ready');
             event.target.playVideo();
         }
-
+        
         function seekTo(seconds) {
             if(player && player.seekTo) {
                 player.seekTo(seconds, true);
@@ -301,11 +319,13 @@ struct YouTubeWebView: UIViewRepresentable {
     class Coordinator: NSObject, WKScriptMessageHandler {
         var parent: YouTubeWebView
         weak var webView: WKWebView?
+        weak var backroundView: UIView?
         var previousVideoLink: String?
         
+        var isBackgroundViewHidden: Bool = false
         var state: PlayerState = .unstarted
         var currentTime: TimeInterval = 0
-
+        
         init(_ parent: YouTubeWebView) {
             self.parent = parent
         }
@@ -313,16 +333,19 @@ struct YouTubeWebView: UIViewRepresentable {
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard let messageBody = message.body as? String else { return }
             
-            if messageBody.contains("PlayerState: ") {
+            if messageBody.contains("PlayerReady: ") {
+                isBackgroundViewHidden = true
+                parent.updatingTrigger.toggle()
+            } else if messageBody.contains("PlayerState: ") {
                 let data = messageBody.replacingOccurrences(of: "PlayerState: ", with: "")
                 let state = PlayerState(rawValue: data) ?? .unstarted
                 self.state = state
-                parent.onStateChange?(state)
+                // parent.onStateChange?(state)
             } else if messageBody.contains("CurrentTime: ") {
                 let data = messageBody.replacingOccurrences(of: "CurrentTime: ", with: "")
                 let time = TimeInterval(data) ?? 0
                 currentTime = time
-                parent.onTimeChange?(time)
+                // parent.onTimeChange?(time)
             }
         }
         
@@ -387,5 +410,23 @@ class YouTubeExtractor {
     
     func isValidLink(_ link: String) -> Bool {
         return extractVideoId(link: link) != nil
+    }
+}
+
+struct CollapsibleBox<Content: View>: View {
+    @Binding var isOpened: Bool
+    var content: () -> Content
+    
+    var body: some View {
+        VStack {
+            if isOpened {
+                content()
+                .frame(maxWidth: UIScreen.main.bounds.width)
+            } else {
+                content()
+                .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: 0)
+            }
+        }
+        .clipped()
     }
 }
