@@ -10,7 +10,7 @@ import MultipeerConnectivity
 import Combine
 
 class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate {
-    var peerID: ChatPeerID
+    var peerID: MCPeerID
     var mcSession: MCSession
     var serviceAdvertiser: MCNearbyServiceAdvertiser?
     let onMessageUpdate = PassthroughSubject<MessageModel, Never>()
@@ -21,11 +21,9 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
     }
         
     override init() {
-        self.peerID = ChatPeerID(
-            userId: UIDevice.current.userId,
-            displayName: UIDevice.current.name
-        )
+        self.peerID = MCPeerID(displayName: UIDevice.current.name)
         self.mcSession = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .required)
+        
         super.init()
         self.mcSession.delegate = self
         

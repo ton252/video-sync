@@ -130,11 +130,17 @@ class ChatViewModel: ObservableObject {
     
     private func setupBindings() {
         let currentUserID = chatManager.currentUserID
-        let messageSubs = chatManager.onMessageUpdate.sink { [weak self] message in
+        let messageUpdateSubs = chatManager.onMessageUpdate.sink { [weak self] message in
             self?.messages.append(message)
             self?.commandPerformer.perform(message: message)
         }
-        cancellable.append(messageSubs)
+        let stateUpdateSubs = chatManager.onStateDidChanged.sink { [weak self] updates in
+            guard let self = self else { return }
+            print(updates.0.userId)
+        }
+        cancellable.append(messageUpdateSubs)
+        cancellable.append(stateUpdateSubs)
+        
         commandPerformer.onVideoStart = { [weak self] message, videoLink in
             let extractor = YouTubeExtractor()
             guard extractor.isValidLink(videoLink) else {
