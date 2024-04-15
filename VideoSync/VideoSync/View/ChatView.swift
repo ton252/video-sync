@@ -136,8 +136,9 @@ class ChatViewModel: ObservableObject {
         }
         let stateUpdateSubs = chatManager.onStateDidChanged.sink { [weak self] updates in
             guard let self = self else { return }
-            print(updates.0.userId)
+            //
         }
+        
         cancellable.append(messageUpdateSubs)
         cancellable.append(stateUpdateSubs)
         

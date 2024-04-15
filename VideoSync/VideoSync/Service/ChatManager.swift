@@ -15,11 +15,11 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
     var serviceAdvertiser: MCNearbyServiceAdvertiser?
     let onMessageUpdate = PassthroughSubject<MessageModel, Never>()
     let onStateDidChanged = PassthroughSubject<(MCPeerID, MCSessionState), Never>()
-    
+        
     var currentUserID: String {
         return UIDevice.current.userId
     }
-        
+    
     override init() {
         self.peerID = MCPeerID(displayName: UIDevice.current.name)
         self.mcSession = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .required)
@@ -43,6 +43,10 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
         //
     }
     
+    func disconnectSession() {
+        mcSession.disconnect()
+    }
+    
     func sendMessage(_ message: MessageModel) {
         message.id = UUID().uuidString
         message.senderID = currentUserID
@@ -61,6 +65,7 @@ class ChatManager: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
     }
     
     // MARK: MCSessionDelegate
+    
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
         switch state {
         case .connected:

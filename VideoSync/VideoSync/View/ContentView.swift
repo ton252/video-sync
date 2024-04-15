@@ -39,12 +39,15 @@ struct ContentView: View {
                     let chatViewModel = ChatViewModel(chatManager: chatManager)
                     ChatView(viewModel: chatViewModel).onDisappear() {
                         chatViewModel.clear()
+                        chatManager.stopHosting()
+                        chatManager.disconnectSession()
                     }
             }.navigationDestination(
                 isPresented: $isChatPeerPresented) {
                     let chatViewModel = ChatViewModel(chatManager: chatManager)
                     ChatView(viewModel: chatViewModel).onDisappear() {
                         chatViewModel.clear()
+                        chatManager.disconnectSession()
                     }
             }
         }
