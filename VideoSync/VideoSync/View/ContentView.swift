@@ -6,25 +6,30 @@
 //
 
 import SwiftUI
+import Combine
 
 struct ContentView: View {
     @ObservedObject var chatManager = ChatManager()
     
+    enum Destination {
+        case hostScreen
+        case peerScreen
+    }
+    
     @State var showBrowser = false
-    @State var isChatHostPresented = false
-    @State var isChatPeerPresented = false
+    @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             VStack {
-                Button("Начать хостинг") {
+                Button("Start hosting") {
                     chatManager.startHosting()
-                    isChatHostPresented = true
+                    navigationPath.append(Destination.hostScreen)
                 }.padding()
                 Spacer().frame(height: 8)
-                Button("Присоединиться") {
+                Button("Connect") {
                     chatManager.joinSession()
-                    showBrowser = true
+                    showBrowser.toggle()
                 }.padding()
             }
             .sheet(isPresented: $showBrowser) {
@@ -32,30 +37,25 @@ struct ContentView: View {
                     showBrowser: $showBrowser,
                     chatManager: chatManager
                 ) {
-                    isChatPeerPresented = true
+                    navigationPath.append(Destination.peerScreen)
                 }
-            }.navigationDestination(
-                isPresented: $isChatHostPresented) {
+            }.navigationDestination(for: Destination.self) { destination in
+                switch destination {
+                case .hostScreen:
                     let chatViewModel = ChatViewModel(isHost: true, chatManager: chatManager)
                     ChatView(viewModel: chatViewModel).onDisappear() {
-                        chatViewModel.clear()
                         chatManager.stopHosting()
                         chatManager.disconnectSession()
                     }
-            }.navigationDestination(
-                isPresented: $isChatPeerPresented) {
+                case .peerScreen:
                     let chatViewModel = ChatViewModel(isHost: false, chatManager: chatManager)
                     ChatView(viewModel: chatViewModel).onDisappear() {
-                        chatViewModel.clear()
                         chatManager.disconnectSession()
                     }
+                }
             }
         }
     }
-}
-
-class ViewModelBox: Observable {
-    
 }
 
 #Preview {

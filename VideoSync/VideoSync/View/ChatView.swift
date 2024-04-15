@@ -39,7 +39,7 @@ struct ChatView: View {
                 }
                 ScrollView() {
                     VStack(spacing: 16) {
-                        ForEach(viewModel.filtredMessages, id: \.id) { message in
+                        ForEach(viewModel.messages, id: \.id) { message in
                             MessageView(
                                 text: message.body,
                                 type: message.type,
@@ -103,15 +103,12 @@ struct ChatView: View {
 class ChatViewModel: ObservableObject {
     let isHost: Bool
     @Published var videoLink: String? = nil
+    @Published var currentVideoStreamerId: String? = nil
     @Published var messages: [MessageModel] = []
     @Published var allowPlayerControl: Bool = false
     @Published var isPlayerOpened: Bool = false
     
     let videoController = YouTubeWebViewController()
-    
-    var filtredMessages: [MessageModel] {
-        return messages.filter() { $0.type != .system && $0.body?.isEmpty == false }
-    }
     
     @Published fileprivate var messageText: String = ""
     @Published fileprivate var commands = [
@@ -134,10 +131,14 @@ class ChatViewModel: ObservableObject {
     }
     
     private func setupBindings() {
+        let extractor = YouTubeExtractor()
         let currentUserID = chatManager.currentUserID
         let messageUpdateSubs = chatManager.onMessageUpdate.sink { [weak self] message in
-            self?.messages.append(message)
-            self?.commandPerformer.perform(message: message)
+            guard let self = self else { return }
+            if (message.type == .message || message.type == .error) && message.body?.isEmpty == false {
+                self.messages.append(message)
+            }
+            self.commandPerformer.perform(message: message)
         }
         let stateUpdateSubs = chatManager.onStateDidChanged.sink { [weak self] updates in
             // guard let self = self else { return }
@@ -148,44 +149,38 @@ class ChatViewModel: ObservableObject {
         cancellable.append(stateUpdateSubs)
         
         commandPerformer.onVideoStart = { [weak self] message, videoLink in
-            let extractor = YouTubeExtractor()
+            guard let self = self else { return }
             guard extractor.isValidLink(videoLink) else {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                    self?.messages.append(MessageModel(body: "Invalid link", type: .error))
+                    self.messages.append(MessageModel(body: "Invalid link", type: .error))
                 }
                 return
             }
-            
-            self?.videoLink = videoLink
-            self?.allowPlayerControl = message.senderID == currentUserID
-            if self?.videoLink == videoLink {
-                self?.videoController.restart()
-            }
-            withAnimation() {
-                self?.isPlayerOpened = true
-            }
+            self.currentVideoStreamerId = message.senderID
+            self.updateVideoLink(videoLink, senderID: message.senderID)
         }
         commandPerformer.onVideoStop = { [weak self] message in
-            guard currentUserID == message.senderID else { return }
-            guard self?.videoLink != nil else {
+            guard let self = self else { return }
+            guard self.currentVideoStreamerId == message.senderID else {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                    self?.messages.append(MessageModel(body: "No playing video", type: .error))
+                    self.messages.append(MessageModel(body: "Only host can stop the video", type: .error))
                 }
                 return
             }
-            self?.videoLink = nil
-            
-            withAnimation() {
-                self?.isPlayerOpened = false
+            guard self.videoLink != nil else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    self.messages.append(MessageModel(body: "No playing video", type: .error))
+                }
+                return
             }
+            self.updateVideoLink(nil, senderID: message.senderID)
         }
         
         commandPerformer.onInitialRequest = { [weak self] message in
             guard let self = self else { return }
             guard self.isHost else { return }
-            print(self.isHost)
             
-            let data = InitalRequestData(videoLink: self.videoLink, state: .unstarted, senderID: currentUserID)
+            let data = InitalRequestData(videoLink: self.videoLink, state: .unstarted, senderID: message.senderID)
             self.sendMessage(MessageModel(body: "/initial_response", type: .system, data: encodedData(data: data)))
         }
         
@@ -194,6 +189,29 @@ class ChatViewModel: ObservableObject {
             guard !self.isHost else { return }
             guard currentUserID == data.senderID else { return }
             self.videoLink = data.videoLink
+            
+            if extractor.isValidLink(data.videoLink ?? "") {
+                updateVideoLink(videoLink, senderID: message.senderID)
+            }
+        }
+    }
+    
+    private func updateVideoLink(_ videoLink: String?, senderID: String) {
+        self.videoLink = videoLink
+
+        if let videoLink = videoLink {
+            allowPlayerControl = senderID == chatManager.currentUserID
+            if self.videoLink == videoLink {
+                videoController.restart()
+            }
+            withAnimation() {
+                self.isPlayerOpened = true
+            }
+        } else {
+            allowPlayerControl = true
+            withAnimation() {
+                self.isPlayerOpened = false
+            }
         }
     }
     
@@ -205,13 +223,6 @@ class ChatViewModel: ObservableObject {
         if !isHost {
             chatManager.sendMessage(MessageModel(body: "/initial_request", type: .system))
         }
-    }
-    
-    func clear() {
-        messageText = ""
-        isPlayerOpened = false
-        videoLink = nil
-        messages = []
     }
     
     func isMessageOutgoing(_ message: MessageModel) -> Bool {
