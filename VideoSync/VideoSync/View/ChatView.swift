@@ -89,6 +89,9 @@ struct ChatView: View {
                 .background(Color(hex: "F5F5F5"))
             }
             .navigationTitle("Chat")
+            .onAppear() {
+                viewModel.initialRequest()
+            }
         }
     }
     
@@ -98,6 +101,7 @@ struct ChatView: View {
 }
 
 class ChatViewModel: ObservableObject {
+    let isHost: Bool
     @Published var videoLink: String? = nil
     @Published var messages: [MessageModel] = []
     @Published var allowPlayerControl: Bool = false
@@ -119,7 +123,8 @@ class ChatViewModel: ObservableObject {
     private let commandPerformer = CommandPerformer()
     private var cancellable: [AnyCancellable] = []
     
-    init(chatManager: ChatManager) {
+    init(isHost: Bool, chatManager: ChatManager) {
+        self.isHost = isHost
         self.chatManager = chatManager
         setupBindings()
     }
@@ -135,10 +140,10 @@ class ChatViewModel: ObservableObject {
             self?.commandPerformer.perform(message: message)
         }
         let stateUpdateSubs = chatManager.onStateDidChanged.sink { [weak self] updates in
-            guard let self = self else { return }
+            // guard let self = self else { return }
             //
         }
-        
+    
         cancellable.append(messageUpdateSubs)
         cancellable.append(stateUpdateSubs)
         
@@ -174,10 +179,32 @@ class ChatViewModel: ObservableObject {
                 self?.isPlayerOpened = false
             }
         }
+        
+        commandPerformer.onInitialRequest = { [weak self] message in
+            guard let self = self else { return }
+            guard self.isHost else { return }
+            print(self.isHost)
+            
+            let data = InitalRequestData(videoLink: self.videoLink, state: .unstarted, senderID: currentUserID)
+            self.sendMessage(MessageModel(body: "/initial_response", type: .system, data: encodedData(data: data)))
+        }
+        
+        commandPerformer.onInitialResponse = { [weak self] message, data in
+            guard let self = self else { return }
+            guard !self.isHost else { return }
+            guard currentUserID == data.senderID else { return }
+            self.videoLink = data.videoLink
+        }
     }
     
     func sendMessage(_ msg: MessageModel) {
         chatManager.sendMessage(msg)
+    }
+    
+    func initialRequest() {
+        if !isHost {
+            chatManager.sendMessage(MessageModel(body: "/initial_request", type: .system))
+        }
     }
     
     func clear() {

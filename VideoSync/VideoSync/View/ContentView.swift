@@ -36,7 +36,7 @@ struct ContentView: View {
                 }
             }.navigationDestination(
                 isPresented: $isChatHostPresented) {
-                    let chatViewModel = ChatViewModel(chatManager: chatManager)
+                    let chatViewModel = ChatViewModel(isHost: true, chatManager: chatManager)
                     ChatView(viewModel: chatViewModel).onDisappear() {
                         chatViewModel.clear()
                         chatManager.stopHosting()
@@ -44,7 +44,7 @@ struct ContentView: View {
                     }
             }.navigationDestination(
                 isPresented: $isChatPeerPresented) {
-                    let chatViewModel = ChatViewModel(chatManager: chatManager)
+                    let chatViewModel = ChatViewModel(isHost: false, chatManager: chatManager)
                     ChatView(viewModel: chatViewModel).onDisappear() {
                         chatViewModel.clear()
                         chatManager.disconnectSession()
@@ -52,6 +52,10 @@ struct ContentView: View {
             }
         }
     }
+}
+
+class ViewModelBox: Observable {
+    
 }
 
 #Preview {

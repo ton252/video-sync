@@ -64,3 +64,9 @@ class MessageModel: Codable {
         }
     }
 }
+
+struct InitalRequestData: Codable {
+    let videoLink: String?
+    let state: PlayerState
+    let senderID: String
+}

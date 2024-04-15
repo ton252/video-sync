@@ -34,7 +34,7 @@ struct YouTubeView: View {
     }
 }
 
-enum PlayerState: String {
+enum PlayerState: String, Codable {
     case unstarted
     case ended
     case playing
