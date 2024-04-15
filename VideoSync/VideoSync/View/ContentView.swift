@@ -13,7 +13,7 @@ struct ContentView: View {
     @State var showBrowser = false
     @State var isChatHostPresented = false
     @State var isChatPeerPresented = false
-    
+
     var body: some View {
         NavigationStack {
             VStack {
@@ -36,10 +36,16 @@ struct ContentView: View {
                 }
             }.navigationDestination(
                 isPresented: $isChatHostPresented) {
-                    ChatView(viewModel: ChatViewModel(chatManager: chatManager))
+                    let chatViewModel = ChatViewModel(chatManager: chatManager)
+                    ChatView(viewModel: chatViewModel).onDisappear() {
+                        chatViewModel.clear()
+                    }
             }.navigationDestination(
                 isPresented: $isChatPeerPresented) {
-                    ChatView(viewModel: ChatViewModel(chatManager: chatManager))
+                    let chatViewModel = ChatViewModel(chatManager: chatManager)
+                    ChatView(viewModel: chatViewModel).onDisappear() {
+                        chatViewModel.clear()
+                    }
             }
         }
     }

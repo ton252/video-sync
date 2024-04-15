@@ -11,6 +11,7 @@ import MultipeerConnectivity
 enum MessageType: Codable {
     case message
     case system
+    case error
 }
 
 class MessageModel: Codable {

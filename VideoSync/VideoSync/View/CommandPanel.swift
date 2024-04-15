@@ -28,19 +28,19 @@ struct CommandPanel: View {
         VStack(spacing: 0) {
             Color.gray.opacity(0.1).frame(height: 1)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .center) {
+                HStack(alignment: .center, spacing: 16) {
                     ForEach(items, id: \.id) { item in
                         Button(action: {
                             onTap?(item)
                         }) {
                             Text(item.displayName)
-                                .padding()
                                 .foregroundColor(.blue)
                         }
                         .frame(height: 40)
                     }
                 }
                 .frame(height: 40)
+                .padding(.horizontal, 16)
             }
         }
         .background(Color(hex: "F5F5F5"))

@@ -8,18 +8,15 @@
 import Foundation
 
 class CommandPerformer {
-    var onUpdateVideoLink: ((MessageModel, String) -> ())?
-    var onPlay: ((String) -> ())?
-    var onPause: ((String) -> ())?
+    var onVideoStart: ((MessageModel, String) -> ())?
+    var onVideoStop: ((MessageModel) -> ())?
     
     init(
-        onUpdateVideoLink: ((MessageModel, String) -> ())? = nil,
-        onPlay: ((String) -> ())? = nil,
-        onPause: ((String) -> ())? = nil
+        onVideoStart: ((MessageModel, String) -> ())? = nil,
+        onVideoStop: ((MessageModel) -> ())? = nil
     ) {
-        self.onUpdateVideoLink = onUpdateVideoLink
-        self.onPlay = onPlay
-        self.onPause = onPause
+        self.onVideoStart = onVideoStart
+        self.onVideoStop = onVideoStop
     }
     
     func perform(message: MessageModel) {
@@ -29,7 +26,9 @@ class CommandPerformer {
                 let link = body
                     .replacingOccurrences(of: "/start_video", with: "")
                     .trimmingCharacters(in: .whitespaces)
-                onUpdateVideoLink?(message, link)
+                onVideoStart?(message, link)
+            } else if body.starts(with: "/stop_video") {
+                onVideoStop?(message)
             }
         }
     }

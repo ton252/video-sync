@@ -7,10 +7,24 @@
 
 import SwiftUI
 
-
 struct MessageView: View {
     let text: String?
     let isOutgoing: Bool
+    let type: MessageType
+    
+    init(
+        text: String? = nil,
+        type: MessageType = .message,
+        isOutgoing: Bool
+    ) {
+        self.text = text
+        self.isOutgoing = isOutgoing
+        self.type = type
+    }
+    
+    private var isError: Bool {
+        return type == .error
+    }
     
     var body: some View {
         HStack {
@@ -21,7 +35,7 @@ struct MessageView: View {
             Text(text ?? "")
                 .padding(10)
                 .foregroundColor(.white)
-                .background(isOutgoing ? Color.blue : Color.gray)
+                .background(isError ? Color.red : (isOutgoing ? Color.blue : Color.gray))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .fixedSize(horizontal: false, vertical: true)
                 .contextMenu {
@@ -38,7 +52,7 @@ struct MessageView: View {
                 }
             
             if !isOutgoing {
-                Spacer() // Pushes the bubble to the left
+                Spacer()
             }
         }
     }

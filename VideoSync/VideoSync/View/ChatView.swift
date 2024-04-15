@@ -37,6 +37,7 @@ struct ChatView: View {
                         ForEach(viewModel.filtredMessages, id: \.id) { message in
                             MessageView(
                                 text: message.body,
+                                type: message.type,
                                 isOutgoing: viewModel.isMessageOutgoing(message)
                             ).padding(.zero)
                         }
@@ -66,6 +67,7 @@ struct ChatView: View {
                     .focused($isTextFieldFocused)
                     .padding(.trailing, 16)
                     Button(action: {
+                        guard !viewModel.messageText.isEmpty else { return }
                         viewModel.sendMessage(MessageModel(body: viewModel.messageText))
                         viewModel.messageText = ""
                     }) {
@@ -82,9 +84,6 @@ struct ChatView: View {
                 .background(Color(hex: "F5F5F5"))
             }
             .navigationTitle("Chat")
-            .onDisappear() {
-                viewModel.clear()
-            }
         }
     }
     
@@ -101,12 +100,13 @@ class ChatViewModel: ObservableObject {
     let videoController = YouTubeWebViewController()
     
     var filtredMessages: [MessageModel] {
-        return messages.filter() { $0.type == .message }
+        return messages.filter() { $0.type != .system && $0.body?.isEmpty == false }
     }
     
     @Published fileprivate var messageText: String = ""
     @Published fileprivate var commands = [
         CommandItem(command: "/start_video"),
+        CommandItem(command: "/stop_video"),
     ]
     
     private let chatManager: ChatManager
@@ -129,12 +129,30 @@ class ChatViewModel: ObservableObject {
             self?.commandPerformer.perform(message: message)
         }
         cancellable.append(messageSubs)
-        commandPerformer.onUpdateVideoLink = { [weak self] message, videoLink in
+        commandPerformer.onVideoStart = { [weak self] message, videoLink in
+            let extractor = YouTubeExtractor()
+            guard extractor.isValidLink(videoLink) else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    self?.messages.append(MessageModel(body: "Invalid link", type: .error))
+                }
+                return
+            }
+            
             self?.videoLink = videoLink
             self?.allowPlayerControl = message.senderID == currentUserID
             if self?.videoLink == videoLink {
                 self?.videoController.restart()
             }
+        }
+        commandPerformer.onVideoStop = { [weak self] message in
+            guard currentUserID == message.senderID else { return }
+            guard self?.videoLink != nil else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    self?.messages.append(MessageModel(body: "No playing video", type: .error))
+                }
+                return
+            }
+            self?.videoLink = nil
         }
     }
     
