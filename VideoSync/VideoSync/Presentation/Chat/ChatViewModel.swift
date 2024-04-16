@@ -54,7 +54,6 @@ final class ChatViewModel: ObservableObject {
     
     func send(message: ChatMessage) {
         message.senderID = chatManager.currentUserID
-        chatManager.send(message: message)
         onMessageUpdate(message)
     }
     
@@ -126,6 +125,9 @@ final class ChatViewModel: ObservableObject {
                 }, onDefault: { msg in
                     guard isInitialized else { return }
                     appendMessage(msg)
+                    if msg.senderID == chatManager.currentUserID {
+                        chatManager.send(message: msg)
+                    }
                 }
             )
         } catch {
@@ -136,72 +138,6 @@ final class ChatViewModel: ObservableObject {
     private func commandOwner(_ cmd: ChatCommand) -> Bool {
         return cmd.senderID == chatManager.currentUserID
     }
-    
-//    private func recieveMessage(_ msg: ChatMessage) {
-//        do {
-//            try CommandParser(message: msg).parse(
-//                startVideo: { cmd in
-//                    self.videoStreamerID = msg.senderID
-//                    updateLink(cmd.link)
-//                },
-//                stopVideo: { cmd in
-//                    self.videoStreamerID = nil
-//                    updateLink(nil)
-//                },
-//                initializeRequest: { cmd in
-//                    guard isHost else { return }
-//                    initializeResponse()
-//                },
-//                initializeResponse: { cmd in
-//                    //
-//                }, onDefault: { message in
-//                    //
-//                }
-//            )
-//            messages.append(msg)
-//        } catch {
-//            return
-//        }
-//    }
-//    
-//    private func sendChatMessage(_ msg: ChatMessage) {
-//        msg.senderID = chatManager.currentUserID
-//        do {
-//            try CommandParser(message: msg).parse(
-//                startVideo: { cmd in
-//                    self.videoStreamerID = chatManager.currentUserID
-//                    updateLink(cmd.link)
-//                    appendMessage(msg)
-//                    chatManager.send(message: msg)
-//                },
-//                stopVideo: { cmd in
-//                    if videoLink == nil || videoStreamerID == nil {
-//                        sendError("Video not playing")
-//                    } else {
-//                        videoStreamerID = nil
-//                        updateLink(nil)
-//                    }
-//                    appendMessage(msg)
-//                    chatManager.send(message: msg)
-//                },
-//                initializeRequest: { cmd in
-//                    //
-//                },
-//                initializeResponse: { cmd in
-//                    //
-//                },
-//                onDefault: { _ in
-//                    appendMessage(msg)
-//                    chatManager.send(message: msg)
-//                }
-//            )
-//        } catch let error as CommandParserError {
-//            sendError(error.errorMessage)
-//            return
-//        } catch {
-//            return
-//        }
-//    }
     
     private func initializeRequest() {
         let message = ChatMessage(
@@ -222,12 +158,7 @@ final class ChatViewModel: ObservableObject {
             body: Command.initializeResponse.rawValue,
             data: encodedData(data: data)
         )
-        send(message: message)
-    }
-    
-    private func stopVideo() {
-        self.videoStreamerID = nil
-        updateLink(nil)
+        chatManager.send(message: message)
     }
     
     private func sendError(_ msg: String?) {

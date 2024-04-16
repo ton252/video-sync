@@ -86,6 +86,7 @@ extension ChatManager: MCSessionDelegate {
     ) {
         let decoder = JSONDecoder()
         guard let msg = try? decoder.decode(ChatMessage.self, from: data) else { return }
+        print("PeerID: \(peerID) Message \(msg.body)")
         
         DispatchQueue.main.async {
             self.onRecieveMessage.send(msg)
