@@ -39,10 +39,12 @@ final class ChatViewModel: ObservableObject {
         self.chatManager = chatManager
         self.isInitialized = isHost
         configure()
+        print("Init")
     }
     
     deinit {
         cancellable.forEach() { $0.cancel() }
+        print("Deinit")
     }
         
     func sendMessage() {

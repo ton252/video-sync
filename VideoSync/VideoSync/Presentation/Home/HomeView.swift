@@ -9,8 +9,9 @@ import SwiftUI
 import Combine
 
 final class HomeViewModel: ObservableObject {
+    @Published var showBrowser: Bool = false
     @Published var navigationPath = NavigationPath()
-    
+
     let chatManager = ChatManager()
     private var cancellable: [Cancellable] = []
     
@@ -20,6 +21,7 @@ final class HomeViewModel: ObservableObject {
         }
         cancellable.append(subs)
     }
+
     
     deinit {
         cancellable.forEach() { $0.cancel() }
@@ -32,8 +34,7 @@ struct HomeView: View {
         case peerScreen
     }
     
-    @State var showBrowser = false
-    @ObservedObject var viewModel = HomeViewModel()
+    @StateObject var viewModel = HomeViewModel()
     @Environment(\.presentationMode) var presentationMode
 
     var body: some View {
@@ -46,15 +47,15 @@ struct HomeView: View {
                 Spacer().frame(height: 8)
                 Button("Connect") {
                     viewModel.chatManager.connect()
-                    showBrowser.toggle()
+                    viewModel.showBrowser.toggle()
                 }.padding()
             }
-            .sheet(isPresented: $showBrowser) {
+            .sheet(isPresented: $viewModel.showBrowser) {
                 HostBrowserView(
                     session: viewModel.chatManager.session!
                 ) { success in
                     presentationMode.wrappedValue.dismiss()
-                    showBrowser.toggle()
+                    viewModel.showBrowser.toggle()
                     
                     guard success else { return }
                     viewModel.navigationPath.append(Destination.peerScreen)
@@ -62,23 +63,18 @@ struct HomeView: View {
             }.navigationDestination(for: Destination.self) { destination in
                 switch destination {
                 case .hostScreen:
-                    let vm = ChatViewModel(
-                        isHost: true,
-                        chatManager: viewModel.chatManager
-                    )
-                    ChatView(viewModel: vm).onDisappear() {
+                    ChatView(isHost: true, chatManager: viewModel.chatManager).onDisappear() {
                         viewModel.chatManager.disconnectPeers()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                             viewModel.chatManager.disconnect()
                         }
                     }
                 case .peerScreen:
-                    let vm = ChatViewModel(
-                        isHost: false,
-                        chatManager: viewModel.chatManager
-                    )
-                    ChatView(viewModel: vm).onDisappear() {
-                        viewModel.chatManager.disconnect()
+                    ChatView(isHost: false, chatManager: viewModel.chatManager).onDisappear() {
+                        viewModel.chatManager.disconnectPeers()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            viewModel.chatManager.disconnect()
+                        }
                     }
                 }
             }

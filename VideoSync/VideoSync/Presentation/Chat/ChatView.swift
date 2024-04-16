@@ -8,10 +8,14 @@
 import SwiftUI
 
 struct ChatView: View {
-    @ObservedObject var viewModel: ChatViewModel
+    @State var viewModel: ChatViewModel
     
     @FocusState private var isTextFieldFocused: Bool
     @Environment(\.safeAreaInsets) private var safeAreaInsets
+    
+    init(isHost: Bool, chatManager: ChatManager) {
+        self.viewModel = ChatViewModel(isHost: isHost, chatManager: chatManager)
+    }
     
     var body: some View {
         return ZStack {
