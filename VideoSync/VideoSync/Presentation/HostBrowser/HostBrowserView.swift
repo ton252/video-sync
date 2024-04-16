@@ -8,16 +8,18 @@
 import SwiftUI
 import MultipeerConnectivity
 
-
-// MARK: - MCBrowserViewControllerWrapper
-struct MCBrowserViewControllerWrapper: UIViewControllerRepresentable {
+struct HostBrowserView: UIViewControllerRepresentable {
     @Binding var showBrowser: Bool
     @ObservedObject var chatManager: ChatManager
     @Environment(\.presentationMode) var presentationMode
-    var onComplete: (() -> ())?
+    
+    var onComplete: ((Bool) -> ())?
 
     func makeUIViewController(context: Context) -> MCBrowserViewController {
-        let browser = MCBrowserViewController(serviceType: "p2p-chat", session: chatManager.mcSession)
+        let browser = MCBrowserViewController(
+            serviceType: ChatManager.serviceType,
+            session: chatManager.session
+        )
         browser.delegate = context.coordinator
         return browser
     }
@@ -31,10 +33,10 @@ struct MCBrowserViewControllerWrapper: UIViewControllerRepresentable {
     }
     
     class Coordinator: NSObject, MCBrowserViewControllerDelegate {
-        var parent: MCBrowserViewControllerWrapper
+        var parent: HostBrowserView
         var chatManager: ChatManager
         
-        init(_ parent: MCBrowserViewControllerWrapper, chatManager: ChatManager) {
+        init(_ parent: HostBrowserView, chatManager: ChatManager) {
             self.parent = parent
             self.chatManager = chatManager
         }
@@ -42,12 +44,14 @@ struct MCBrowserViewControllerWrapper: UIViewControllerRepresentable {
         func browserViewControllerDidFinish(_ browserViewController: MCBrowserViewController) {
             parent.presentationMode.wrappedValue.dismiss()
             parent.showBrowser = false
-            parent.onComplete?()
+            parent.onComplete?(true)
         }
         
         func browserViewControllerWasCancelled(_ browserViewController: MCBrowserViewController) {
             parent.presentationMode.wrappedValue.dismiss()
             parent.showBrowser = false
+            parent.onComplete?(false)
         }
     }
+    
 }
