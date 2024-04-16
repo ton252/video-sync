@@ -34,6 +34,7 @@ struct HomeView: View {
     
     @State var showBrowser = false
     @ObservedObject var viewModel = HomeViewModel()
+    @Environment(\.presentationMode) var presentationMode
 
     var body: some View {
         NavigationStack(path: $viewModel.navigationPath) {
@@ -50,11 +51,12 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showBrowser) {
                 HostBrowserView(
-                    session: viewModel.chatManager.session!,
-                    showBrowser: $showBrowser
+                    session: viewModel.chatManager.session!
                 ) { success in
-                    guard success else { return }
+                    presentationMode.wrappedValue.dismiss()
                     showBrowser.toggle()
+                    
+                    guard success else { return }
                     viewModel.navigationPath.append(Destination.peerScreen)
                 }
             }.navigationDestination(for: Destination.self) { destination in

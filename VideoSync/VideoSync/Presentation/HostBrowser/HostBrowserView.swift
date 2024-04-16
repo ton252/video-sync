@@ -10,8 +10,6 @@ import MultipeerConnectivity
 
 struct HostBrowserView: UIViewControllerRepresentable {
     let session: MCSession
-    @Binding var showBrowser: Bool
-    @Environment(\.presentationMode) var presentationMode
     
     var onComplete: ((Bool) -> ())?
 
@@ -40,18 +38,13 @@ struct HostBrowserView: UIViewControllerRepresentable {
         }
         
         func browserViewControllerDidFinish(_ browserViewController: MCBrowserViewController) {
-            parent.presentationMode.wrappedValue.dismiss()
-            parent.showBrowser.toggle()
             parent.onComplete?(true)
         }
         
         func browserViewControllerWasCancelled(_ browserViewController: MCBrowserViewController) {
-            parent.presentationMode.wrappedValue.dismiss()
-            parent.showBrowser.toggle()
             parent.onComplete?(false)
         }
     }
-    
 }
 
 //HostBrowserView(
