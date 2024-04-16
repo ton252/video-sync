@@ -31,7 +31,7 @@ import Foundation
 //    var link: String = ""
 //}
 
-protocol BaseCommand {
+protocol ChatCommand {
     var senderID: String { get }
     var receiverID: String? { get }
 }
@@ -42,23 +42,23 @@ enum Command: String {
     case initializeRequest = "/initialize_request"
     case initializeResponse = "/initialize_response"
     
-    struct StartVideo: Codable, BaseCommand {
+    struct StartVideo: Codable, ChatCommand {
         var senderID: String
         var receiverID: String? = nil
         var link: String
     }
     
-    struct StopVideo: Codable, BaseCommand {
+    struct StopVideo: Codable, ChatCommand {
         var senderID: String
         var receiverID: String? = nil
     }
     
-    struct InitializeRequest: Codable, BaseCommand {
+    struct InitializeRequest: Codable, ChatCommand {
         var senderID: String
         var receiverID: String? = nil
     }
     
-    struct InitializeResponse: Codable, BaseCommand {
+    struct InitializeResponse: Codable, ChatCommand {
         var senderID: String
         var receiverID: String? = nil
         var data: InitializeResponseData

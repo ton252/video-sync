@@ -10,11 +10,11 @@ import SwiftUI
 struct MessageView: View {
     let text: String?
     let isOutgoing: Bool
-    let type: MessageType
+    let type: ChatMessageType
     
     init(
         text: String? = nil,
-        type: MessageType = .message,
+        type: ChatMessageType = .message,
         isOutgoing: Bool
     ) {
         self.text = text

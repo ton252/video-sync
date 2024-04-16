@@ -7,10 +7,16 @@
 
 import Foundation
 
+struct CommandParserError: Error {
+    let command: Command
+    let errorMessage: String?
+    let message: ChatMessage
+}
+
 final class CommandParser {
-    private let message: Message
+    private let message: ChatMessage
     
-    init(message: Message) {
+    init(message: ChatMessage) {
         self.message = message
     }
     
@@ -18,13 +24,17 @@ final class CommandParser {
         startVideo: (Command.StartVideo) -> Void,
         stopVideo: (Command.StopVideo) -> Void,
         initializeRequest: (Command.InitializeRequest) -> Void,
-        initializeResponse: (Command.InitializeResponse) -> Void
-    ) {
+        initializeResponse: (Command.InitializeResponse) -> Void,
+        onDefault: (ChatMessage) -> Void
+    ) throws {
         guard let body = message.body else { return }
         if body.starts(with: Command.startVideo.rawValue) {
             let link = body
                 .replacingOccurrences(of: Command.startVideo.rawValue, with: "")
                 .trimmingCharacters(in: .whitespaces)
+            guard !link.isEmpty else {
+                throw CommandParserError(command: Command.startVideo, errorMessage: "Missing video link", message: message)
+            }
             startVideo(Command.StartVideo(senderID: message.senderID, link: link))
         } else if body.starts(with: Command.stopVideo.rawValue) {
             stopVideo(Command.StopVideo(senderID: message.senderID))
@@ -33,6 +43,8 @@ final class CommandParser {
         } else if body.starts(with: Command.initializeResponse.rawValue) {
             guard let data = decodedData(type: Command.InitializeResponseData.self, data: message.data) else { return }
             initializeResponse(Command.InitializeResponse(senderID: message.senderID, data: data))
+        } else {
+            onDefault(message)
         }
     }
 }

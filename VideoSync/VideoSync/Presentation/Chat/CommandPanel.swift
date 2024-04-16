@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-
 struct CommandItem {
     let id: String
     let command: String
@@ -43,6 +42,6 @@ struct CommandPanel: View {
                 .padding(.horizontal, 16)
             }
         }
-        .background(Color(hex: "F5F5F5"))
+        .background(Color.sGrey)
     }
 }
