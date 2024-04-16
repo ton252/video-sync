@@ -13,26 +13,30 @@ final class ChatManager: NSObject, ObservableObject {
     static let serviceType = "p2p-chat"
     
     let peerID: MCPeerID
-    let session: MCSession
     var currentUserID: String { return UIDevice.current.userID }
+    
+    private(set) var session: MCSession?
     
     let onUpdateMessage = PassthroughSubject<ChatMessage, Never>()
     let onSendMessage = PassthroughSubject<ChatMessage, Never>()
     let onRecieveMessage = PassthroughSubject<ChatMessage, Never>()
+    let onRemoteDisconnect = PassthroughSubject<Void, Never>()
     
     private let serviceAdvertiser: MCNearbyServiceAdvertiser
-    
+    private let disconnectMessage = "disconnect"
+
     override init() {
         let peerID = MCPeerID(displayName: UIDevice.current.name)
         
         self.peerID = peerID
-        self.session = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .required)
         self.serviceAdvertiser = MCNearbyServiceAdvertiser(peer: peerID, discoveryInfo: nil, serviceType: ChatManager.serviceType)
         
         super.init()
         
-        self.session.delegate = self
         self.serviceAdvertiser.delegate = self
+        
+        let session = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .required)
+        self.session = session
     }
     
     func send(message msg: ChatMessage) {
@@ -40,7 +44,10 @@ final class ChatManager: NSObject, ObservableObject {
         
         let encoder = JSONEncoder()
         guard let data = try? encoder.encode(msg) else { return }
+        guard let session = self.session else { return }
         try? session.send(data, toPeers: session.connectedPeers, with: .reliable)
+        
+        print("[Send] PeerID: \(peerID.displayName) Message \(msg.body ?? "none")")
         
         DispatchQueue.main.async {
             self.onSendMessage.send(msg)
@@ -48,16 +55,22 @@ final class ChatManager: NSObject, ObservableObject {
         }
     }
     
-    func startHosting() {
+    func connect() {
+        let session = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .required)
+        self.session = session
+        session.delegate = self
         serviceAdvertiser.startAdvertisingPeer()
     }
     
-    func stopHosting() {
+    func disconnect() {
+        session?.disconnect()
         serviceAdvertiser.stopAdvertisingPeer()
+        session = nil
     }
     
-    func disconnectSession() {
-        session.disconnect()
+    func disconnectPeers() {
+        guard let session = session else { return }
+        try? session.send(disconnectMessage.data(using: .utf8)!, toPeers: session.connectedPeers, with: .reliable)
     }
 }
 
@@ -84,13 +97,23 @@ extension ChatManager: MCSessionDelegate {
         didReceive data: Data,
         fromPeer peerID: MCPeerID
     ) {
-        let decoder = JSONDecoder()
-        guard let msg = try? decoder.decode(ChatMessage.self, from: data) else { return }
-        print("PeerID: \(peerID) Message \(msg.body)")
-        
-        DispatchQueue.main.async {
-            self.onRecieveMessage.send(msg)
-            self.onUpdateMessage.send(msg)
+        if let msg = try? JSONDecoder().decode(ChatMessage.self, from: data) {
+            print("[Receive] PeerID: \(peerID.displayName) Message \(msg.body ?? "none")")
+            
+            DispatchQueue.main.async {
+                self.onRecieveMessage.send(msg)
+                self.onUpdateMessage.send(msg)
+            }
+        } else if let sysCommand = String(data: data, encoding: .utf8) {
+            print("[Receive] PeerID: \(peerID.displayName) Command \(sysCommand)")
+            
+            if sysCommand == disconnectMessage {
+                DispatchQueue.main.async {
+                    self.disconnect()
+                    self.onRemoteDisconnect.send()
+                }
+                return
+            }
         }
     }
     

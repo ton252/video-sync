@@ -8,6 +8,24 @@
 import SwiftUI
 import Combine
 
+final class HomeViewModel: ObservableObject {
+    @Published var navigationPath = NavigationPath()
+    
+    let chatManager = ChatManager()
+    private var cancellable: [Cancellable] = []
+    
+    init() {
+        let subs = chatManager.onRemoteDisconnect.sink { _ in
+            self.navigationPath.removeLast()
+        }
+        cancellable.append(subs)
+    }
+    
+    deinit {
+        cancellable.forEach() { $0.cancel() }
+    }
+}
+
 struct HomeView: View {
     enum Destination {
         case hostScreen
@@ -15,44 +33,50 @@ struct HomeView: View {
     }
     
     @State var showBrowser = false
-    @State private var navigationPath = NavigationPath()
-    
-    private let chatManager = ChatManager()
+    @ObservedObject var viewModel = HomeViewModel()
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
+        NavigationStack(path: $viewModel.navigationPath) {
             VStack {
                 Button("Start hosting") {
-                    chatManager.startHosting()
-                    navigationPath.append(Destination.hostScreen)
+                    viewModel.chatManager.connect()
+                    viewModel.navigationPath.append(Destination.hostScreen)
                 }.padding()
                 Spacer().frame(height: 8)
                 Button("Connect") {
+                    viewModel.chatManager.connect()
                     showBrowser.toggle()
                 }.padding()
             }
             .sheet(isPresented: $showBrowser) {
-                HostBrowserView(showBrowser: $showBrowser, chatManager: chatManager) { success in
+                HostBrowserView(
+                    session: viewModel.chatManager.session!,
+                    showBrowser: $showBrowser
+                ) { success in
                     guard success else { return }
-                    navigationPath.append(Destination.peerScreen)
+                    showBrowser.toggle()
+                    viewModel.navigationPath.append(Destination.peerScreen)
                 }
             }.navigationDestination(for: Destination.self) { destination in
                 switch destination {
                 case .hostScreen:
-                    let viewModel = ChatViewModel(
+                    let vm = ChatViewModel(
                         isHost: true,
-                        chatManager: chatManager
+                        chatManager: viewModel.chatManager
                     )
-                    ChatView(viewModel: viewModel).onDisappear() {
-                        chatManager.disconnectSession()
+                    ChatView(viewModel: vm).onDisappear() {
+                        viewModel.chatManager.disconnectPeers()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            viewModel.chatManager.disconnect()
+                        }
                     }
                 case .peerScreen:
-                    let viewModel = ChatViewModel(
+                    let vm = ChatViewModel(
                         isHost: false,
-                        chatManager: chatManager
+                        chatManager: viewModel.chatManager
                     )
-                    ChatView(viewModel: viewModel).onDisappear() {
-                        chatManager.disconnectSession()
+                    ChatView(viewModel: vm).onDisappear() {
+                        viewModel.chatManager.disconnect()
                     }
                 }
             }

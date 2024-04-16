@@ -9,8 +9,8 @@ import SwiftUI
 import MultipeerConnectivity
 
 struct HostBrowserView: UIViewControllerRepresentable {
+    let session: MCSession
     @Binding var showBrowser: Bool
-    @ObservedObject var chatManager: ChatManager
     @Environment(\.presentationMode) var presentationMode
     
     var onComplete: ((Bool) -> ())?
@@ -18,7 +18,7 @@ struct HostBrowserView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> MCBrowserViewController {
         let browser = MCBrowserViewController(
             serviceType: ChatManager.serviceType,
-            session: chatManager.session
+            session: session
         )
         browser.delegate = context.coordinator
         return browser
@@ -29,29 +29,35 @@ struct HostBrowserView: UIViewControllerRepresentable {
     }
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(self, chatManager: chatManager)
+        Coordinator(self)
     }
     
     class Coordinator: NSObject, MCBrowserViewControllerDelegate {
         var parent: HostBrowserView
-        var chatManager: ChatManager
         
-        init(_ parent: HostBrowserView, chatManager: ChatManager) {
+        init(_ parent: HostBrowserView) {
             self.parent = parent
-            self.chatManager = chatManager
         }
         
         func browserViewControllerDidFinish(_ browserViewController: MCBrowserViewController) {
             parent.presentationMode.wrappedValue.dismiss()
-            parent.showBrowser = false
+            parent.showBrowser.toggle()
             parent.onComplete?(true)
         }
         
         func browserViewControllerWasCancelled(_ browserViewController: MCBrowserViewController) {
             parent.presentationMode.wrappedValue.dismiss()
-            parent.showBrowser = false
+            parent.showBrowser.toggle()
             parent.onComplete?(false)
         }
     }
     
 }
+
+//HostBrowserView(
+//    session: chatManager.session!
+//) { success in
+//    guard success else { return }
+//    viewModel.showBrowser.toggle()
+//    viewModel.navigationPath.append(Destination.peerScreen)
+//}

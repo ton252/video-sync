@@ -71,13 +71,16 @@ struct ChatView: View {
                     .cornerRadius(8)
                 }
                 .padding(EdgeInsets(top: 4, leading: 16, bottom: 16, trailing: 16))
-                .background(Color(hex: "F5F5F5"))
+                .background(Color.sGrey)
             }
             .navigationTitle(viewModel.title)
             .onAppear() {
                 viewModel.onAppear()
             }
-        }.allowsHitTesting(viewModel.isInitialized)
+            if !viewModel.isInitialized {
+                Color.black.opacity(0.5).ignoresSafeArea()
+            }
+        }
     }
     
     private func dismissKeyboard() {

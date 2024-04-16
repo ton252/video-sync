@@ -9,7 +9,6 @@ import Foundation
 import SwiftUI
 import Combine
 
-
 final class ChatViewModel: ObservableObject {
     let isHost: Bool
     let chatManager: ChatManager
@@ -19,7 +18,7 @@ final class ChatViewModel: ObservableObject {
     @Published var videoLink: String? = nil
     @Published var videoStreamerID: String? = nil
     @Published var isPlayerOpened: Bool = false
-    @Published var isInitialized: Bool
+    @Published var isInitialized: Bool = false
     
     @Published var commands = [
         CommandItem(command: "/start_video"),
@@ -54,6 +53,7 @@ final class ChatViewModel: ObservableObject {
     
     func send(message: ChatMessage) {
         message.senderID = chatManager.currentUserID
+        appendMessage(message)
         onMessageUpdate(message)
     }
     
@@ -67,21 +67,10 @@ final class ChatViewModel: ObservableObject {
     
     private func configure() {
         let onReceiveMsg = chatManager.onRecieveMessage.sink() { [weak self] msg in
+            self?.appendMessage(msg)
             self?.onMessageUpdate(msg)
         }
         cancellable.append(onReceiveMsg)
-    }
-
-    private func updateLink(_ link: String?) {
-        withAnimation {
-            self.videoLink = link
-            self.isPlayerOpened = !(link ?? "").isEmpty
-        }
-    }
-    
-    private func appendMessage(_ msg: ChatMessage) {
-        guard msg.isVisible && !(msg.body ?? "").isEmpty else { return }
-        messages.append(msg)
     }
     
     private func onMessageUpdate(_ msg: ChatMessage) {
@@ -109,37 +98,29 @@ final class ChatViewModel: ObservableObject {
         }
     }
     
-    private func commandOwner(_ cmd: ChatCommand) -> Bool {
-        return cmd.senderID == chatManager.currentUserID
-    }
-    
     private func startVideo(_ msg: ChatMessage, _ cmd: Command.StartVideo) {
         guard isInitialized else { return }
-        appendMessage(msg)
         videoStreamerID = msg.senderID
         updateLink(cmd.link)
-        if commandOwner(cmd) {
-            chatManager.send(message: msg)
-        }
+        forwardMessageIfNeeded(msg)
     }
     
     private func stopVideo(_ msg: ChatMessage, _ cmd: Command.StopVideo) {
         guard isInitialized else { return }
-        appendMessage(msg)
         if videoLink == nil || videoStreamerID == nil {
             sendError("Video not playing")
         } else {
             videoStreamerID = nil
             updateLink(nil)
-        }
-        if commandOwner(cmd) {
-            chatManager.send(message: msg)
+            forwardMessageIfNeeded(msg)
         }
     }
     
     private func initializeResponse(_ msg: ChatMessage, _ cmd: Command.InitializeResponse) {
         guard cmd.data.receiverID == chatManager.currentUserID else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        self.isInitialized = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.videoStreamerID = cmd.data.videoStreamerID
             self.updateLink(cmd.data.videoLink)
             self.isInitialized = true
@@ -164,10 +145,7 @@ final class ChatViewModel: ObservableObject {
     
     private func onDefault(_ msg: ChatMessage) {
         guard isInitialized else { return }
-        appendMessage(msg)
-        if msg.senderID == chatManager.currentUserID {
-            chatManager.send(message: msg)
-        }
+        forwardMessageIfNeeded(msg)
     }
     
     private func sendInitialRequest() {
@@ -186,5 +164,23 @@ final class ChatViewModel: ObservableObject {
             senderID: chatManager.currentUserID
         )
         appendMessage(message)
+    }
+    
+    private func updateLink(_ link: String?) {
+        withAnimation {
+            self.videoLink = link
+            self.isPlayerOpened = !(link ?? "").isEmpty
+        }
+    }
+    
+    private func appendMessage(_ msg: ChatMessage) {
+        guard isInitialized && msg.isVisible && !(msg.body ?? "").isEmpty else { return }
+        messages.append(msg)
+    }
+    
+    private func forwardMessageIfNeeded(_ msg: ChatMessage) {
+        if msg.senderID == chatManager.currentUserID {
+            chatManager.send(message: msg)
+        }
     }
 }
