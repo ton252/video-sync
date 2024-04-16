@@ -77,7 +77,7 @@ struct ChatView: View {
             .onAppear() {
                 viewModel.onAppear()
             }
-        }
+        }.allowsHitTesting(viewModel.isInitialized)
     }
     
     private func dismissKeyboard() {

@@ -33,7 +33,6 @@ import Foundation
 
 protocol ChatCommand {
     var senderID: String { get }
-    var receiverID: String? { get }
 }
 
 enum Command: String {
@@ -44,27 +43,24 @@ enum Command: String {
     
     struct StartVideo: Codable, ChatCommand {
         var senderID: String
-        var receiverID: String? = nil
         var link: String
     }
     
     struct StopVideo: Codable, ChatCommand {
         var senderID: String
-        var receiverID: String? = nil
     }
     
     struct InitializeRequest: Codable, ChatCommand {
         var senderID: String
-        var receiverID: String? = nil
     }
     
     struct InitializeResponse: Codable, ChatCommand {
         var senderID: String
-        var receiverID: String? = nil
         var data: InitializeResponseData
     }
     
     struct InitializeResponseData: Codable {
+        let receiverID: String
         let videoLink: String?
         let videoStreamerID: String?
     }

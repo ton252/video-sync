@@ -19,6 +19,7 @@ final class ChatViewModel: ObservableObject {
     @Published var videoLink: String? = nil
     @Published var videoStreamerID: String? = nil
     @Published var isPlayerOpened: Bool = false
+    @Published var isInitialized: Bool
     
     @Published var commands = [
         CommandItem(command: "/start_video"),
@@ -37,6 +38,7 @@ final class ChatViewModel: ObservableObject {
     ) {
         self.isHost = isHost
         self.chatManager = chatManager
+        self.isInitialized = isHost
         configure()
     }
     
@@ -46,8 +48,14 @@ final class ChatViewModel: ObservableObject {
         
     func sendMessage() {
         let message = ChatMessage(body: messageInput)
-        sendChatMessage(message)
+        send(message: message)
         messageInput = ""
+    }
+    
+    func send(message: ChatMessage) {
+        message.senderID = chatManager.currentUserID
+        chatManager.send(message: message)
+        onMessageUpdate(message)
     }
     
     func isOutgoingMessage(_ msg: ChatMessage) -> Bool {
@@ -61,7 +69,7 @@ final class ChatViewModel: ObservableObject {
     
     private func configure() {
         let onReceiveMsg = chatManager.onRecieveMessage.sink() { [weak self] msg in
-            self?.recieveMessage(msg)
+            self?.onMessageUpdate(msg)
         }
         cancellable.append(onReceiveMsg)
     }
@@ -74,75 +82,126 @@ final class ChatViewModel: ObservableObject {
     }
     
     private func appendMessage(_ msg: ChatMessage) {
-        guard msg.isVisible else { return }
+        guard msg.isVisible && !(msg.body ?? "").isEmpty else { return }
         messages.append(msg)
     }
     
-    private func recieveMessage(_ msg: ChatMessage) {
+    private func onMessageUpdate(_ msg: ChatMessage) {
         do {
             try CommandParser(message: msg).parse(
                 startVideo: { cmd in
-                    self.videoStreamerID = msg.senderID
-                    updateLink(cmd.link)
-                },
-                stopVideo: { cmd in
-                    self.videoStreamerID = nil
-                    updateLink(nil)
-                },
-                initializeRequest: { cmd in
-                    guard isHost else { return }
-                    initializeResponse()
-                },
-                initializeResponse: { cmd in
-                    //
-                }, onDefault: { message in
-                    //
-                }
-            )
-            messages.append(msg)
-        } catch {
-            return
-        }
-    }
-    
-    private func sendChatMessage(_ msg: ChatMessage) {
-        msg.senderID = chatManager.currentUserID
-        do {
-            try CommandParser(message: msg).parse(
-                startVideo: { cmd in
-                    self.videoStreamerID = chatManager.currentUserID
-                    updateLink(cmd.link)
+                    guard isInitialized else { return }
                     appendMessage(msg)
-                    chatManager.send(message: msg)
+                    videoStreamerID = msg.senderID
+                    updateLink(cmd.link)
+                    if commandOwner(cmd) {
+                        chatManager.send(message: msg)
+                    }
                 },
                 stopVideo: { cmd in
+                    guard isInitialized else { return }
                     if videoLink == nil || videoStreamerID == nil {
                         sendError("Video not playing")
                     } else {
                         videoStreamerID = nil
                         updateLink(nil)
+                        appendMessage(msg)
                     }
-                    appendMessage(msg)
-                    chatManager.send(message: msg)
+                    if commandOwner(cmd) {
+                        chatManager.send(message: msg)
+                    }
                 },
                 initializeRequest: { cmd in
-                    //
+                    guard isInitialized else { return }
+                    guard isHost else { return }
+                    initializeResponse(receiverID: msg.senderID)
                 },
                 initializeResponse: { cmd in
-                    //
-                },
-                onDefault: { _ in
+                    guard cmd.data.receiverID == chatManager.currentUserID else { return }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        self.videoStreamerID = cmd.data.videoStreamerID
+                        self.updateLink(cmd.data.videoLink)
+                        self.isInitialized = true
+                    }
+                }, onDefault: { msg in
+                    guard isInitialized else { return }
                     appendMessage(msg)
-                    chatManager.send(message: msg)
                 }
             )
-        } catch let error as CommandParserError {
-            sendError(error.errorMessage)
-            return
         } catch {
             return
         }
     }
+    
+    private func commandOwner(_ cmd: ChatCommand) -> Bool {
+        return cmd.senderID == chatManager.currentUserID
+    }
+    
+//    private func recieveMessage(_ msg: ChatMessage) {
+//        do {
+//            try CommandParser(message: msg).parse(
+//                startVideo: { cmd in
+//                    self.videoStreamerID = msg.senderID
+//                    updateLink(cmd.link)
+//                },
+//                stopVideo: { cmd in
+//                    self.videoStreamerID = nil
+//                    updateLink(nil)
+//                },
+//                initializeRequest: { cmd in
+//                    guard isHost else { return }
+//                    initializeResponse()
+//                },
+//                initializeResponse: { cmd in
+//                    //
+//                }, onDefault: { message in
+//                    //
+//                }
+//            )
+//            messages.append(msg)
+//        } catch {
+//            return
+//        }
+//    }
+//    
+//    private func sendChatMessage(_ msg: ChatMessage) {
+//        msg.senderID = chatManager.currentUserID
+//        do {
+//            try CommandParser(message: msg).parse(
+//                startVideo: { cmd in
+//                    self.videoStreamerID = chatManager.currentUserID
+//                    updateLink(cmd.link)
+//                    appendMessage(msg)
+//                    chatManager.send(message: msg)
+//                },
+//                stopVideo: { cmd in
+//                    if videoLink == nil || videoStreamerID == nil {
+//                        sendError("Video not playing")
+//                    } else {
+//                        videoStreamerID = nil
+//                        updateLink(nil)
+//                    }
+//                    appendMessage(msg)
+//                    chatManager.send(message: msg)
+//                },
+//                initializeRequest: { cmd in
+//                    //
+//                },
+//                initializeResponse: { cmd in
+//                    //
+//                },
+//                onDefault: { _ in
+//                    appendMessage(msg)
+//                    chatManager.send(message: msg)
+//                }
+//            )
+//        } catch let error as CommandParserError {
+//            sendError(error.errorMessage)
+//            return
+//        } catch {
+//            return
+//        }
+//    }
     
     private func initializeRequest() {
         let message = ChatMessage(
@@ -152,8 +211,9 @@ final class ChatViewModel: ObservableObject {
         chatManager.send(message: message)
     }
     
-    private func initializeResponse() {
+    private func initializeResponse(receiverID: String) {
         let data = Command.InitializeResponseData(
+            receiverID: receiverID,
             videoLink: videoLink,
             videoStreamerID: videoStreamerID
         )
@@ -162,7 +222,7 @@ final class ChatViewModel: ObservableObject {
             body: Command.initializeResponse.rawValue,
             data: encodedData(data: data)
         )
-        chatManager.send(message: message)
+        send(message: message)
     }
     
     private func stopVideo() {

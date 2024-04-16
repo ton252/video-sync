@@ -16,6 +16,7 @@ final class ChatManager: NSObject, ObservableObject {
     let session: MCSession
     var currentUserID: String { return UIDevice.current.userID }
     
+    let onUpdateMessage = PassthroughSubject<ChatMessage, Never>()
     let onSendMessage = PassthroughSubject<ChatMessage, Never>()
     let onRecieveMessage = PassthroughSubject<ChatMessage, Never>()
     
@@ -43,6 +44,7 @@ final class ChatManager: NSObject, ObservableObject {
         
         DispatchQueue.main.async {
             self.onSendMessage.send(msg)
+            self.onUpdateMessage.send(msg)
         }
     }
     
@@ -87,6 +89,7 @@ extension ChatManager: MCSessionDelegate {
         
         DispatchQueue.main.async {
             self.onRecieveMessage.send(msg)
+            self.onUpdateMessage.send(msg)
         }
     }
     

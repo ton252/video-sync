@@ -43,13 +43,17 @@ struct HomeView: View {
                         isHost: true,
                         chatManager: chatManager
                     )
-                    ChatView(viewModel: viewModel)
+                    ChatView(viewModel: viewModel).onDisappear() {
+                        chatManager.disconnectSession()
+                    }
                 case .peerScreen:
                     let viewModel = ChatViewModel(
                         isHost: false,
                         chatManager: chatManager
                     )
-                    ChatView(viewModel: viewModel)
+                    ChatView(viewModel: viewModel).onDisappear() {
+                        chatManager.disconnectSession()
+                    }
                 }
             }
         }
