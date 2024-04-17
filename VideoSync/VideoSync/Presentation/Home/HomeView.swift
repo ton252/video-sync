@@ -71,7 +71,6 @@ struct HomeView: View {
                     }
                 case .peerScreen:
                     ChatView(viewModel: ChatViewModel(isHost: false, chatManager: viewModel.chatManager)).onDisappear() {
-                        viewModel.chatManager.disconnectPeers()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                             viewModel.chatManager.disconnect()
                         }
