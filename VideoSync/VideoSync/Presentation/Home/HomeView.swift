@@ -63,14 +63,14 @@ struct HomeView: View {
             }.navigationDestination(for: Destination.self) { destination in
                 switch destination {
                 case .hostScreen:
-                    ChatView(isHost: true, chatManager: viewModel.chatManager).onDisappear() {
+                    ChatView(viewModel: ChatViewModel(isHost: true, chatManager: viewModel.chatManager)).onDisappear() {
                         viewModel.chatManager.disconnectPeers()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                             viewModel.chatManager.disconnect()
                         }
                     }
                 case .peerScreen:
-                    ChatView(isHost: false, chatManager: viewModel.chatManager).onDisappear() {
+                    ChatView(viewModel: ChatViewModel(isHost: false, chatManager: viewModel.chatManager)).onDisappear() {
                         viewModel.chatManager.disconnectPeers()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                             viewModel.chatManager.disconnect()
