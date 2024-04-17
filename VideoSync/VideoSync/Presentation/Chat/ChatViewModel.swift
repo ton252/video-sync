@@ -13,12 +13,13 @@ final class ChatViewModel: ObservableObject {
     let isHost: Bool
     let chatManager: ChatManager
     
+    @Published var player = Player()
     @Published var messages: [ChatMessage] = []
     @Published var messageInput: String = ""
-    @Published var videoLink: String? = nil
     @Published var videoStreamerID: String? = nil
     @Published var isPlayerOpened: Bool = false
     @Published var isInitialized: Bool = false
+
     
     @Published var commands = [
         CommandItem(command: "/start_video"),
@@ -29,6 +30,7 @@ final class ChatViewModel: ObservableObject {
         return isHost ? "Host" : "Peer"
     }
     
+    private var errorDelay: TimeInterval = 0.3
     private var cancellable: [Cancellable] = []
     
     init(
@@ -39,12 +41,10 @@ final class ChatViewModel: ObservableObject {
         self.chatManager = chatManager
         self.isInitialized = isHost
         configure()
-        print("Init")
     }
     
     deinit {
         cancellable.forEach() { $0.cancel() }
-        print("Deinit")
     }
         
     func sendMessage() {
@@ -72,7 +72,15 @@ final class ChatViewModel: ObservableObject {
             self?.appendMessage(msg)
             self?.onMessageUpdate(msg)
         }
+        let onPlayerTime = player.onTimeChange.sink() { time in
+            print(time)
+        }
+        let onStateChange = player.onStateChange.sink() { state in
+            print(state)
+        }
         cancellable.append(onReceiveMsg)
+        cancellable.append(onPlayerTime)
+        cancellable.append(onStateChange)
     }
     
     private func onMessageUpdate(_ msg: ChatMessage) {
@@ -102,14 +110,21 @@ final class ChatViewModel: ObservableObject {
     
     private func startVideo(_ msg: ChatMessage, _ cmd: Command.StartVideo) {
         guard isInitialized else { return }
+        let extractor = YouTubeExtractor()
+        
+        guard let videoID = extractor.extractVideoId(link: cmd.link) else {
+            sendError("Invalid link")
+            return
+        }
+        
         videoStreamerID = msg.senderID
-        updateLink(cmd.link)
+        updateLink(videoID)
         forwardMessageIfNeeded(msg)
     }
     
     private func stopVideo(_ msg: ChatMessage, _ cmd: Command.StopVideo) {
         guard isInitialized else { return }
-        if videoLink == nil || videoStreamerID == nil {
+        if player.link == nil || videoStreamerID == nil {
             sendError("Video not playing")
         } else {
             videoStreamerID = nil
@@ -134,7 +149,7 @@ final class ChatViewModel: ObservableObject {
         guard isHost else { return }
         let data = Command.InitializeResponseData(
             receiverID: msg.senderID,
-            videoLink: videoLink,
+            videoLink: player.link,
             videoStreamerID: videoStreamerID
         )
         let message = ChatMessage(
@@ -160,18 +175,22 @@ final class ChatViewModel: ObservableObject {
     }
     
     private func sendError(_ msg: String?) {
-        let message = ChatMessage(
-            type: .error,
-            body: msg,
-            senderID: chatManager.currentUserID
-        )
-        appendMessage(message)
+        DispatchQueue.main.asyncAfter(deadline: .now() + errorDelay) { [weak self] in
+            guard let self = self else { return }
+            let message = ChatMessage(
+                type: .error,
+                body: msg,
+                senderID: self.chatManager.currentUserID
+            )
+            self.appendMessage(message)
+        }
     }
     
     private func updateLink(_ link: String?) {
         withAnimation {
-            self.videoLink = link
+            self.player.link = link
             self.isPlayerOpened = !(link ?? "").isEmpty
+            self.isPlayerOpened = true
         }
     }
     

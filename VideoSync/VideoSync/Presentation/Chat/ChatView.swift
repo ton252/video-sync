@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ChatView: View {
     @StateObject var viewModel: ChatViewModel
-    
     @FocusState private var isTextFieldFocused: Bool
     @Environment(\.safeAreaInsets) private var safeAreaInsets
     
@@ -19,7 +18,8 @@ struct ChatView: View {
             Color.white
             VStack(spacing: 0) {
                 CollapsibleBox(isOpened: $viewModel.isPlayerOpened) {
-                    Color.black
+                    YouTubePlayer(player: viewModel.player)
+                        .frame(width: UIScreen.main.bounds.width)
                         .aspectRatio(16/9, contentMode: .fit)
                         .layoutPriority(1)
                 }
