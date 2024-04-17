@@ -37,6 +37,7 @@ final class ChatViewModel: ObservableObject {
         isHost: Bool,
         chatManager: ChatManager
     ) {
+        print("Init ViewModel")
         self.isHost = isHost
         self.chatManager = chatManager
         self.isInitialized = isHost
@@ -44,6 +45,7 @@ final class ChatViewModel: ObservableObject {
     }
     
     deinit {
+        print("Deinit ViewModel")
         cancellable.forEach() { $0.cancel() }
     }
         

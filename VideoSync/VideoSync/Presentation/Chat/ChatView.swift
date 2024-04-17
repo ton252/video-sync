@@ -12,6 +12,10 @@ struct ChatView: View {
     @FocusState private var isTextFieldFocused: Bool
     @Environment(\.safeAreaInsets) private var safeAreaInsets
     
+    init(viewModel: ChatViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+    }
+    
     var body: some View {
         return ZStack {
             Color.sGrey.edgesIgnoringSafeArea(.bottom)

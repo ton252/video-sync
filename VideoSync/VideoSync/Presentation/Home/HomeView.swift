@@ -36,6 +36,7 @@ struct HomeView: View {
     
     @StateObject var viewModel = HomeViewModel()
     @Environment(\.presentationMode) var presentationMode
+    @State var viewModelBag = [AnyObject]()
 
     var body: some View {
         NavigationStack(path: $viewModel.navigationPath) {
@@ -63,17 +64,19 @@ struct HomeView: View {
             }.navigationDestination(for: Destination.self) { destination in
                 switch destination {
                 case .hostScreen:
-                    ChatView(viewModel: ChatViewModel(isHost: true, chatManager: viewModel.chatManager)).onDisappear() {
-                        viewModel.chatManager.disconnectPeers()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            viewModel.chatManager.disconnect()
-                        }
+                    ChatView(viewModel: ChatViewModel(isHost: true, chatManager: viewModel.chatManager))
+                        .onDisappear() {
+                            viewModel.chatManager.disconnectPeers()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                viewModel.chatManager.disconnect()
+                            }
                     }
                 case .peerScreen:
-                    ChatView(viewModel: ChatViewModel(isHost: false, chatManager: viewModel.chatManager)).onDisappear() {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            viewModel.chatManager.disconnect()
-                        }
+                    ChatView(viewModel: ChatViewModel(isHost: false, chatManager: viewModel.chatManager))
+                        .onDisappear() {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                viewModel.chatManager.disconnect()
+                            }
                     }
                 }
             }
