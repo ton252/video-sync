@@ -40,7 +40,7 @@ final class ChatViewModel: ObservableObject {
         print("Init ViewModel")
         self.isHost = isHost
         self.chatManager = chatManager
-        self.isInitialized = isHost
+        self.isInitialized = true
         configure()
     }
     
@@ -50,15 +50,15 @@ final class ChatViewModel: ObservableObject {
     }
         
     func sendMessage() {
-        let message = ChatMessage(body: messageInput)
-        send(message: message)
+        let msg = ChatMessage(body: messageInput)
+        send(message: msg)
         messageInput = ""
     }
     
-    func send(message: ChatMessage) {
-        message.senderID = chatManager.currentUserID
-        appendMessage(message)
-        onMessageUpdate(message)
+    func send(message msg: ChatMessage) {
+        msg.senderID = chatManager.currentUserID
+        appendMessage(msg)
+        onMessageUpdate(msg)
     }
     
     func isOutgoingMessage(_ msg: ChatMessage) -> Bool {
@@ -66,7 +66,7 @@ final class ChatViewModel: ObservableObject {
     }
     
     func onAppear() {
-        sendInitialRequest()
+        // sendInitialRequest()
     }
     
     private func configure() {
@@ -87,106 +87,187 @@ final class ChatViewModel: ObservableObject {
     }
     
     private func onMessageUpdate(_ msg: ChatMessage) {
-        do {
-            try CommandParser(message: msg).parse(
-                startVideo: { cmd in
-                    startVideo(msg, cmd)
-                },
-                stopVideo: { cmd in
-                    stopVideo(msg, cmd)
-                },
-                syncVideo: { cmd in
-                    syncVideo(msg, cmd)
-                },
-                initializeRequest: { cmd in
-                    initializeRequest(msg, cmd)
-                },
-                initializeResponse: { cmd in
-                    initializeResponse(msg, cmd)
-                }, onDefault: { msg in
-                    onDefault(msg)
-                }
-            )
-        } catch let error as CommandParserError {
-            sendError(error.errorMessage)
-        } catch {
-            //
-        }
+        let isMessageOwner = self.isMessageOwner(msg)
+        CommandParser(message: msg).parse(
+            startVideo: { cmd in
+                guard isInitialized else { return }
+                startVideo(cmd)
+                forwardMessageIfNeeded(msg)
+            }, stopVideo: { cmd in
+                guard isInitialized else { return }
+                stopVideo(cmd)
+                forwardMessageIfNeeded(msg)
+            }, syncVideo: { cmd in
+                guard isInitialized else { return }
+                guard !isMessageOwner else { return }
+                syncVideo(cmd)
+            }, initializeRequest: { cmd in
+                //
+            }, initializeResponse: { cmd in },
+            onDefault: { cmd in
+                forwardMessageIfNeeded(msg)
+            },
+            onError: { error in
+                sendError(error.errorMessage)
+            }
+        )
+        
     }
     
-    private func startVideo(_ msg: ChatMessage, _ cmd: Command.StartVideo) {
-        guard isInitialized else { return }
-        guard cmd.senderID == chatManager.currentUserID  else { return }
+    private func startVideo(_ cmd: Command.StartVideo) {
         let extractor = YouTubeExtractor()
-        
+
         guard let videoID = extractor.extractVideoId(link: cmd.link) else {
             sendError("Invalid link")
             return
         }
-        
-        videoStreamerID = msg.senderID
+
+        videoStreamerID = cmd.senderID
         updateLink(videoID)
-        forwardMessageIfNeeded(msg)
         sendSyncVideo()
     }
     
-    private func stopVideo(_ msg: ChatMessage, _ cmd: Command.StopVideo) {
-        guard isInitialized else { return }
+    private func stopVideo(_ cmd: Command.StopVideo) {
         if player.link == nil || videoStreamerID == nil {
             sendError("Video not playing")
         } else {
             videoStreamerID = nil
             updateLink(nil)
-            forwardMessageIfNeeded(msg)
         }
     }
     
-    private func initializeResponse(_ msg: ChatMessage, _ cmd: Command.InitializeResponse) {
-        guard cmd.data.receiverID == chatManager.currentUserID else { return }
-        self.isInitialized = true
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.videoStreamerID = cmd.data.videoStreamerID
-            self.updateLink(cmd.data.videoLink)
-            self.isInitialized = true
-        }
-    }
-    
-    private func initializeRequest(_ msg: ChatMessage, _ cmd: Command.InitializeRequest) {
-        guard isInitialized else { return }
-        guard isHost else { return }
-        let data = Command.InitializeResponseData(
-            receiverID: msg.senderID,
-            videoLink: player.link,
-            videoStreamerID: videoStreamerID
-        )
-        let message = ChatMessage(
-            type: .system,
-            body: Command.initializeResponse.rawValue,
-            data: encodedData(data: data)
-        )
-        chatManager.send(message: message)
-    }
-    
-    private func syncVideo(_ msg: ChatMessage, _ cmd: Command.SyncVideo) {
-        guard isInitialized else { return }
-        guard cmd.senderID != chatManager.currentUserID else { return }
+    private func syncVideo(_ cmd: Command.SyncVideo) {
         print("Received /sync_video: \(cmd.data.link) \(cmd.data.state)  \(cmd.data.playerTime)")
+        player.seek(to: cmd.data.playerTime)
+        if player.link != cmd.data.link {
+            updateLink(cmd.data.link)
+        }
+        if cmd.data.state == .playing {
+            player.play()
+        } else if cmd.data.state == .paused {
+            player.pause()
+        }
     }
     
-    private func onDefault(_ msg: ChatMessage) {
-        guard isInitialized else { return }
-        forwardMessageIfNeeded(msg)
-    }
     
-    private func sendInitialRequest() {
-        guard !isHost else { return }
-        let message = ChatMessage(
-            type: .system,
-            body: Command.initializeRequest.rawValue
-        )
-        chatManager.send(message: message)
-    }
+    
+//    private func initializeRequest(_ msg: ChatMessage, _ cmd: Command.InitializeRequest) {
+//        guard isInitialized else { return }
+//        guard isHost else { return }
+//        let data = Command.InitializeResponseData(
+//            receiverID: msg.senderID,
+//            videoLink: player.link,
+//            videoStreamerID: videoStreamerID
+//        )
+//        let message = ChatMessage(
+//            type: .system,
+//            body: Command.initializeResponse.rawValue,
+//            data: encodedData(data: data)
+//        )
+//        chatManager.send(message: message)
+//    }
+    
+//    private func onMessageUpdate(_ msg: ChatMessage) {
+//        do {
+////            try CommandParser(message: msg).parse(
+////                startVideo: { cmd in
+////                    startVideo(msg, cmd)
+////                },
+////                stopVideo: { cmd in
+////                    stopVideo(msg, cmd)
+////                },
+////                syncVideo: { cmd in
+////                    syncVideo(msg, cmd)
+////                },
+////                initializeRequest: { cmd in
+////                    initializeRequest(msg, cmd)
+////                },
+////                initializeResponse: { cmd in
+////                    initializeResponse(msg, cmd)
+////                }, onDefault: { msg in
+////                    onDefault(msg)
+////                }
+////            )
+//        } catch let error as CommandParserError {
+//            sendError(error.errorMessage)
+//        } catch {
+//            //
+//        }
+//    }
+    
+//    private func startVideo(_ msg: ChatMessage, _ cmd: Command.StartVideo) {
+//        guard isInitialized else { return }
+//        guard cmd.senderID == chatManager.currentUserID  else { return }
+//        let extractor = YouTubeExtractor()
+//        
+//        guard let videoID = extractor.extractVideoId(link: cmd.link) else {
+//            sendError("Invalid link")
+//            return
+//        }
+//        
+//        videoStreamerID = msg.senderID
+//        updateLink(videoID)
+//        forwardMessageIfNeeded(msg)
+//        sendSyncVideo()
+//    }
+//    
+//    private func stopVideo(_ msg: ChatMessage, _ cmd: Command.StopVideo) {
+//        guard isInitialized else { return }
+//        if player.link == nil || videoStreamerID == nil {
+//            sendError("Video not playing")
+//        } else {
+//            videoStreamerID = nil
+//            updateLink(nil)
+//            forwardMessageIfNeeded(msg)
+//        }
+//    }
+//    
+//    private func initializeResponse(_ msg: ChatMessage, _ cmd: Command.InitializeResponse) {
+//        guard cmd.data.receiverID == chatManager.currentUserID else { return }
+//        self.isInitialized = true
+//
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+//            self.videoStreamerID = cmd.data.videoStreamerID
+//            self.updateLink(cmd.data.videoLink)
+//            self.isInitialized = true
+//        }
+//    }
+//    
+//    private func initializeRequest(_ msg: ChatMessage, _ cmd: Command.InitializeRequest) {
+//        guard isInitialized else { return }
+//        guard isHost else { return }
+//        let data = Command.InitializeResponseData(
+//            receiverID: msg.senderID,
+//            videoLink: player.link,
+//            videoStreamerID: videoStreamerID
+//        )
+//        let message = ChatMessage(
+//            type: .system,
+//            body: Command.initializeResponse.rawValue,
+//            data: encodedData(data: data)
+//        )
+//        chatManager.send(message: message)
+//    }
+//    
+//    private func syncVideo(_ msg: ChatMessage, _ cmd: Command.SyncVideo) {
+//        guard isInitialized else { return }
+//        guard cmd.senderID != chatManager.currentUserID else { return }
+//        print("Received /sync_video: \(cmd.data.link) \(cmd.data.state)  \(cmd.data.playerTime)")
+//    }
+//    
+//    private func onDefault(_ msg: ChatMessage) {
+//        guard isInitialized else { return }
+//        forwardMessageIfNeeded(msg)
+//    }
+//    
+//    private func sendInitialRequest() {
+//        guard !isHost else { return }
+//        let message = ChatMessage(
+//            type: .system,
+//            body: Command.initializeRequest.rawValue
+//        )
+//        chatManager.send(message: message)
+//    }
     
     private func sendSyncVideo() {
         guard chatManager.currentUserID == videoStreamerID else { return }
@@ -234,5 +315,9 @@ final class ChatViewModel: ObservableObject {
         if msg.senderID == chatManager.currentUserID {
             chatManager.send(message: msg)
         }
+    }
+    
+    private func isMessageOwner(_ msg: ChatMessage) -> Bool {
+        return msg.senderID == chatManager.currentUserID
     }
 }

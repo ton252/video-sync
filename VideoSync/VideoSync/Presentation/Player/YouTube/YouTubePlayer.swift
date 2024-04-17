@@ -41,6 +41,7 @@ struct YouTubePlayer: UIViewRepresentable {
     
     func makeCoordinator() -> Coordinator {
         let coordinator = Coordinator(self)
+        player.delegate = coordinator
         return coordinator
     }
     
@@ -57,7 +58,6 @@ struct YouTubePlayer: UIViewRepresentable {
         init(_ parent: YouTubePlayer) {
             self.parent = parent
             super.init()
-            self.parent.player.delegate = self
         }
         
         func loadLink(player: Player, link: String?) {

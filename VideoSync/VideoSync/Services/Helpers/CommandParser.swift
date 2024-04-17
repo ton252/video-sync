@@ -26,15 +26,17 @@ final class CommandParser {
         syncVideo: (Command.SyncVideo) -> Void,
         initializeRequest: (Command.InitializeRequest) -> Void,
         initializeResponse: (Command.InitializeResponse) -> Void,
-        onDefault: (ChatMessage) -> Void
-    ) throws {
+        onDefault: (ChatMessage) -> Void,
+        onError: (CommandParserError) -> Void
+    ) {
         guard let body = message.body else { return }
         if body.starts(with: Command.startVideo.rawValue) {
             let link = body
                 .replacingOccurrences(of: Command.startVideo.rawValue, with: "")
                 .trimmingCharacters(in: .whitespaces)
             guard !link.isEmpty else {
-                throw CommandParserError(command: Command.startVideo, errorMessage: "Missing video link", message: message)
+                onError(CommandParserError(command: Command.startVideo, errorMessage: "Missing video link", message: message))
+                return
             }
             startVideo(Command.StartVideo(senderID: message.senderID, link: link))
         } else if body.starts(with: Command.stopVideo.rawValue) {

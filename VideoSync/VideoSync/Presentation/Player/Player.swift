@@ -43,17 +43,19 @@ class Player: ObservableObject {
     }
     
     var state: PlayerState {
+        guard let delegate = delegate else { return .unstarted }
         return delegate.getState(player: self)
     }
     
     var currentTime: TimeInterval {
+        guard let delegate = delegate else { return 0 }
         return delegate.getCurrentTime(player: self)
     }
     
     let onTimeChange = PassthroughSubject<TimeInterval, Never>()
     let onStateChange = PassthroughSubject<PlayerState, Never>()
     
-    weak var delegate: PlayerDelegate!
+    weak var delegate: PlayerDelegate?
     
     init(
         link: String? = nil,
@@ -64,15 +66,15 @@ class Player: ObservableObject {
     }
     
     func play() {
-        delegate.play(player: self)
+        delegate?.play(player: self)
     }
     
     func pause() {
-        delegate.pause(player: self)
+        delegate?.pause(player: self)
     }
     
     func seek(to time: TimeInterval) {
-        delegate.seek(player: self, to: time)
+        delegate?.seek(player: self, to: time)
     }
 }
 
