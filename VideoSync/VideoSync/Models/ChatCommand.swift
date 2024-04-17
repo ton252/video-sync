@@ -39,8 +39,10 @@ enum Command: String {
     case startVideo = "/start_video"
     case stopVideo = "/stop_video"
     case syncVideo = "/sync_video"
+    
     case initializeRequest = "/initialize_request"
     case initializeResponse = "/initialize_response"
+    case disconnectPeers = "/disconnect_peers"
     
     struct StartVideo: Codable, ChatCommand {
         var senderID: String
@@ -78,4 +80,6 @@ enum Command: String {
         var sendTime: TimeInterval
     }
 }
+
+
 

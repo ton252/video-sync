@@ -27,6 +27,7 @@
 		717FD2592BCFC865007E9979 /* YouTubePlayerWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717FD2582BCFC865007E9979 /* YouTubePlayerWebView.swift */; };
 		717FD25C2BCFCEEC007E9979 /* YouTubeExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717FD25B2BCFCEEC007E9979 /* YouTubeExtractor.swift */; };
 		717FD25E2BCFD9E3007E9979 /* YouTubePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717FD25D2BCFD9E3007E9979 /* YouTubePlayer.swift */; };
+		717FD2602BD0079E007E9979 /* ChatPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717FD25F2BD0079E007E9979 /* ChatPackage.swift */; };
 		7206E5BA2BC421B50072467D /* VideoSyncApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7206E5B92BC421B50072467D /* VideoSyncApp.swift */; };
 		7206E5BE2BC421B60072467D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7206E5BD2BC421B60072467D /* Assets.xcassets */; };
 		7206E5C22BC421B60072467D /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7206E5C12BC421B60072467D /* Preview Assets.xcassets */; };
@@ -73,6 +74,7 @@
 		717FD2582BCFC865007E9979 /* YouTubePlayerWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubePlayerWebView.swift; sourceTree = "<group>"; };
 		717FD25B2BCFCEEC007E9979 /* YouTubeExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeExtractor.swift; sourceTree = "<group>"; };
 		717FD25D2BCFD9E3007E9979 /* YouTubePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubePlayer.swift; sourceTree = "<group>"; };
+		717FD25F2BD0079E007E9979 /* ChatPackage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPackage.swift; sourceTree = "<group>"; };
 		71FF5B872BC5F5990023F0D1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		71FF5B882BC687BA0023F0D1 /* ChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManager.swift; sourceTree = "<group>"; };
 		71FF5B8A2BC688220023F0D1 /* HostBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostBrowserView.swift; sourceTree = "<group>"; };
@@ -177,6 +179,7 @@
 			children = (
 				711DF76A2BCE7CFB00B759FB /* ChatMessage.swift */,
 				711DF76C2BCE7D7A00B759FB /* ChatCommand.swift */,
+				717FD25F2BD0079E007E9979 /* ChatPackage.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -462,6 +465,7 @@
 				717FD25E2BCFD9E3007E9979 /* YouTubePlayer.swift in Sources */,
 				711DF7682BCE75E400B759FB /* HostBrowserView.swift in Sources */,
 				711DF76D2BCE7D7A00B759FB /* ChatCommand.swift in Sources */,
+				717FD2602BD0079E007E9979 /* ChatPackage.swift in Sources */,
 				711DF7632BCE720800B759FB /* HomeView.swift in Sources */,
 				711DF7662BCE72A400B759FB /* ChatManager.swift in Sources */,
 				711DF77D2BCE974600B759FB /* CommandPanel.swift in Sources */,

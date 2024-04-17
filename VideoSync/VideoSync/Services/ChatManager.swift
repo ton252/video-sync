@@ -23,7 +23,6 @@ final class ChatManager: NSObject, ObservableObject {
     let onRemoteDisconnect = PassthroughSubject<Void, Never>()
     
     private let serviceAdvertiser: MCNearbyServiceAdvertiser
-    private let disconnectMessage = "disconnect"
 
     override init() {
         let peerID = MCPeerID(displayName: UIDevice.current.name)
@@ -41,12 +40,12 @@ final class ChatManager: NSObject, ObservableObject {
     
     func send(message msg: ChatMessage) {
         msg.senderID = currentUserID
-        
-        let encoder = JSONEncoder()
-        guard let data = try? encoder.encode(msg) else { return }
-        guard let session = self.session else { return }
-        try? session.send(data, toPeers: session.connectedPeers, with: .reliable)
-        
+        let package = ChatPackage(
+            type: .userMessage,
+            message: msg,
+            command: nil
+        )
+        send(package: package)
         print("[Send] PeerID: \(peerID.displayName) Message \(msg.body ?? "none")")
         
         DispatchQueue.main.async {
@@ -69,8 +68,18 @@ final class ChatManager: NSObject, ObservableObject {
     }
     
     func disconnectPeers() {
-        guard let session = session else { return }
-        try? session.send(disconnectMessage.data(using: .utf8)!, toPeers: session.connectedPeers, with: .reliable)
+        let package = ChatPackage(
+            type: .system,
+            command: .disconnectPeers
+        )
+        send(package: package)
+    }
+    
+    private func send(package: ChatPackage) {
+        package.id = UUID().uuidString
+        guard let data = try? JSONEncoder().encode(package) else { return }
+        guard let session = self.session else { return }
+        try? session.send(data, toPeers: session.connectedPeers, with: .reliable)
     }
 }
 
@@ -97,23 +106,23 @@ extension ChatManager: MCSessionDelegate {
         didReceive data: Data,
         fromPeer peerID: MCPeerID
     ) {
-        if let msg = try? JSONDecoder().decode(ChatMessage.self, from: data) {
-            print("[Receive] PeerID: \(peerID.displayName) Message \(msg.body ?? "none")")
-            
+        guard let package = try? JSONDecoder().decode(ChatPackage.self, from: data) else { return }
+        
+        switch package.type {
+        case .system:
+            guard let command = package.command else { return }
+            switch command {
+            case .disconnectPeers:
+                onRemoteDisconnect.send()
+            }
+            return
+        case .userMessage:
+            guard let msg = package.message else { return }
             DispatchQueue.main.async {
                 self.onRecieveMessage.send(msg)
                 self.onUpdateMessage.send(msg)
             }
-        } else if let sysCommand = String(data: data, encoding: .utf8) {
-            print("[Receive] PeerID: \(peerID.displayName) Command \(sysCommand)")
-            
-            if sysCommand == disconnectMessage {
-                DispatchQueue.main.async {
-                    self.disconnect()
-                    self.onRemoteDisconnect.send()
-                }
-                return
-            }
+            return
         }
     }
     
