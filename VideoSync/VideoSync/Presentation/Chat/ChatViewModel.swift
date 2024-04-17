@@ -72,12 +72,13 @@ final class ChatViewModel: ObservableObject {
             self?.appendMessage(msg)
             self?.onMessageUpdate(msg)
         }
-        let onPlayerTime = player.onTimeChange.sink() { time in
-            print(time)
+        let onPlayerTime = player.onTimeChange.sink() { [weak self] time in
+            self?.sendSyncVideo()
         }
-        let onStateChange = player.onStateChange.sink() { state in
-            print(state)
+        let onStateChange = player.onStateChange.sink() { [weak self] state in
+            self?.sendSyncVideo()
         }
+        
         cancellable.append(onReceiveMsg)
         cancellable.append(onPlayerTime)
         cancellable.append(onStateChange)
@@ -91,6 +92,9 @@ final class ChatViewModel: ObservableObject {
                 },
                 stopVideo: { cmd in
                     stopVideo(msg, cmd)
+                },
+                syncVideo: { cmd in
+                    syncVideo(msg, cmd)
                 },
                 initializeRequest: { cmd in
                     initializeRequest(msg, cmd)
@@ -110,6 +114,7 @@ final class ChatViewModel: ObservableObject {
     
     private func startVideo(_ msg: ChatMessage, _ cmd: Command.StartVideo) {
         guard isInitialized else { return }
+        guard cmd.senderID == chatManager.currentUserID  else { return }
         let extractor = YouTubeExtractor()
         
         guard let videoID = extractor.extractVideoId(link: cmd.link) else {
@@ -120,6 +125,7 @@ final class ChatViewModel: ObservableObject {
         videoStreamerID = msg.senderID
         updateLink(videoID)
         forwardMessageIfNeeded(msg)
+        sendSyncVideo()
     }
     
     private func stopVideo(_ msg: ChatMessage, _ cmd: Command.StopVideo) {
@@ -160,6 +166,12 @@ final class ChatViewModel: ObservableObject {
         chatManager.send(message: message)
     }
     
+    private func syncVideo(_ msg: ChatMessage, _ cmd: Command.SyncVideo) {
+        guard isInitialized else { return }
+        guard cmd.senderID != chatManager.currentUserID else { return }
+        print("Received /sync_video: \(cmd.data.link) \(cmd.data.state)  \(cmd.data.playerTime)")
+    }
+    
     private func onDefault(_ msg: ChatMessage) {
         guard isInitialized else { return }
         forwardMessageIfNeeded(msg)
@@ -172,6 +184,24 @@ final class ChatViewModel: ObservableObject {
             body: Command.initializeRequest.rawValue
         )
         chatManager.send(message: message)
+    }
+    
+    private func sendSyncVideo() {
+        guard chatManager.currentUserID == videoStreamerID else { return }
+        guard let link = player.link else { return }
+        let data = Command.SyncVideoData(
+            link: link,
+            state: player.state,
+            playerTime: player.currentTime,
+            sendTime: Date().timeIntervalSince1970
+        )
+        let message = ChatMessage(
+            type: .system,
+            body: Command.syncVideo.rawValue,
+            data: encodedData(data: data)
+        )
+        chatManager.send(message: message)
+        print("Sended /sync_video: \(data.link) \(data.state)  \(data.playerTime)")
     }
     
     private func sendError(_ msg: String?) {
@@ -190,7 +220,6 @@ final class ChatViewModel: ObservableObject {
         withAnimation {
             self.player.link = link
             self.isPlayerOpened = !(link ?? "").isEmpty
-            self.isPlayerOpened = true
         }
     }
     

@@ -23,6 +23,7 @@ final class CommandParser {
     func parse(
         startVideo: (Command.StartVideo) -> Void,
         stopVideo: (Command.StopVideo) -> Void,
+        syncVideo: (Command.SyncVideo) -> Void,
         initializeRequest: (Command.InitializeRequest) -> Void,
         initializeResponse: (Command.InitializeResponse) -> Void,
         onDefault: (ChatMessage) -> Void
@@ -38,6 +39,9 @@ final class CommandParser {
             startVideo(Command.StartVideo(senderID: message.senderID, link: link))
         } else if body.starts(with: Command.stopVideo.rawValue) {
             stopVideo(Command.StopVideo(senderID: message.senderID))
+        } else if body.starts(with: Command.syncVideo.rawValue) {
+            guard let data = decodedData(type: Command.SyncVideoData.self, data: message.data) else { return }
+            syncVideo(Command.SyncVideo(senderID: message.senderID, data: data))
         } else if body.starts(with: Command.initializeRequest.rawValue) {
             initializeRequest(Command.InitializeRequest(senderID: message.senderID))
         } else if body.starts(with: Command.initializeResponse.rawValue) {

@@ -38,6 +38,7 @@ protocol ChatCommand {
 enum Command: String {
     case startVideo = "/start_video"
     case stopVideo = "/stop_video"
+    case syncVideo = "/sync_video"
     case initializeRequest = "/initialize_request"
     case initializeResponse = "/initialize_response"
     
@@ -48,6 +49,11 @@ enum Command: String {
     
     struct StopVideo: Codable, ChatCommand {
         var senderID: String
+    }
+    
+    struct SyncVideo: Codable, ChatCommand {
+        var senderID: String
+        var data: SyncVideoData
     }
     
     struct InitializeRequest: Codable, ChatCommand {
@@ -63,6 +69,13 @@ enum Command: String {
         let receiverID: String
         let videoLink: String?
         let videoStreamerID: String?
+    }
+    
+    struct SyncVideoData: Codable {
+        var link: String
+        var state: PlayerState
+        var playerTime: TimeInterval
+        var sendTime: TimeInterval
     }
 }
 
