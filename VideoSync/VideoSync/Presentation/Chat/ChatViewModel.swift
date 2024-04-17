@@ -122,7 +122,7 @@ final class ChatViewModel: ObservableObject {
         guard cmd.data.receiverID == chatManager.currentUserID else { return }
         self.isInitialized = true
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.videoStreamerID = cmd.data.videoStreamerID
             self.updateLink(cmd.data.videoLink)
             self.isInitialized = true
