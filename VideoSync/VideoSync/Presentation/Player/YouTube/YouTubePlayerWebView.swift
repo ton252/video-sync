@@ -99,7 +99,6 @@ extension YouTubePlayerWebView: WKScriptMessageHandler {
         self.state = PlayerState.fromYouTubeState(state)
         self.currentTime = currentTime
         self.bufferingTime = bufferingTime
-        print(self.bufferingTime)
                 
         switch type {
         case "player_ready":

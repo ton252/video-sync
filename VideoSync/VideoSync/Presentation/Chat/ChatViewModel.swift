@@ -138,58 +138,51 @@ final class ChatViewModel: ObservableObject {
     
     private func syncVideo(_ cmd: Command.SyncVideo) {
         let currentTime = Date().timeIntervalSince1970
-        let responseTime = currentTime - cmd.data.sendTime
-        let newTime = cmd.data.playerTime + responseTime
-        
+        let sendTime = cmd.data.sendTime
+        let networkDelay = max(currentTime - cmd.data.sendTime, 0)
+        let correctedTime = cmd.data.playerTime + networkDelay
+
         let playerState = player.state
         let playerCurrentTime = player.currentTime
         let playerBufferingTime = player.bufferingTime
-                
+
         print("""
             System Current Time: \(currentTime)
-            Response Time: \(currentTime)
+            Send Time: \(sendTime)
+            Network Delay: \(networkDelay)
             State (player): \(playerState)
             Current Time (player): \(playerCurrentTime)
             Buffering Time (player): \(playerBufferingTime)
-            Address: \(Unmanaged.passUnretained(self).toOpaque())
-            Player Address: \(Unmanaged.passUnretained(self.player).toOpaque())
-        
             State (remote): \(cmd.data.state)
             Current Time (remote): \(cmd.data.playerTime)
             Send Time (remote): \(cmd.data.sendTime)
-            New Time: \(newTime)
+            Corrected Time: \(correctedTime)
             ------------------------------------------------
-        
         """)
-        
+
+        // Синхронизация ссылки на видео при изменении
         if player.link != cmd.data.link {
             updateLink(cmd.data.link)
         }
-        
-        if cmd.data.state == .paused {
-            player.seek(to: newTime)
-            player.pause()
-            return
-        }
-        
-        if player.state == .buffering {
-            player.seek(to: newTime)
-            player.pause()
-            return
-        }
-        
-        if player.bufferingTime < newTime + 2.0 {
-            player.seek(to: newTime)
-            player.pause()
-            return
-        }
-        
+
+        // Обработка команды воспроизведения
         if cmd.data.state == .playing {
-            player.seek(to: newTime)
-            player.play()
+            if playerState == .paused {
+                // Переход в состояние воспроизведения, если плеер на паузе
+                player.play()
+            }
+            if abs(playerCurrentTime - correctedTime) > 1.0 {
+                // Корректировка времени при значительной разнице
+                player.seek(to: correctedTime)
+            }
+        } else if cmd.data.state == .paused {
+            player.pause()
+        } else if cmd.data.state == .buffering && playerState != .buffering {
+            // Обработка состояния буферизации
+            player.pause() // Пауза в ожидании загрузки буфера
         }
     }
-    
+
     
     
 //    private func initializeRequest(_ msg: ChatMessage, _ cmd: Command.InitializeRequest) {

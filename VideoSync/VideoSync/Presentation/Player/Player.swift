@@ -82,7 +82,6 @@ class Player: ObservableObject {
         state = delegate.getState(player: self)
         currentTime = delegate.getCurrentTime(player: self)
         bufferingTime = delegate.getBufferingTime(player: self)
-        print(delegate.getBufferingTime(player: self))
     }
 }
 
