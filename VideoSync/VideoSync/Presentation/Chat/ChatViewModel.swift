@@ -137,15 +137,56 @@ final class ChatViewModel: ObservableObject {
     }
     
     private func syncVideo(_ cmd: Command.SyncVideo) {
-        print("Received /sync_video: \(cmd.data.link) \(cmd.data.state)  \(cmd.data.playerTime)")
-        player.seek(to: cmd.data.playerTime)
+        let currentTime = Date().timeIntervalSince1970
+        let responseTime = currentTime - cmd.data.sendTime
+        let newTime = cmd.data.playerTime + responseTime
+        
+        let playerState = player.state
+        let playerCurrentTime = player.currentTime
+        let playerBufferingTime = player.bufferingTime
+                
+        print("""
+            System Current Time: \(currentTime)
+            Response Time: \(currentTime)
+            State (player): \(playerState)
+            Current Time (player): \(playerCurrentTime)
+            Buffering Time (player): \(playerBufferingTime)
+            Address: \(Unmanaged.passUnretained(self).toOpaque())
+            Player Address: \(Unmanaged.passUnretained(self.player).toOpaque())
+        
+            State (remote): \(cmd.data.state)
+            Current Time (remote): \(cmd.data.playerTime)
+            Send Time (remote): \(cmd.data.sendTime)
+            New Time: \(newTime)
+            ------------------------------------------------
+        
+        """)
+        
         if player.link != cmd.data.link {
             updateLink(cmd.data.link)
         }
-        if cmd.data.state == .playing {
-            player.play()
-        } else if cmd.data.state == .paused {
+        
+        if cmd.data.state == .paused {
+            player.seek(to: newTime)
             player.pause()
+            return
+        }
+        
+        if player.state == .buffering {
+            player.seek(to: newTime)
+            player.pause()
+            return
+        }
+        
+        if player.bufferingTime < newTime + 2.0 {
+            player.seek(to: newTime)
+            player.pause()
+            return
+        }
+        
+        if cmd.data.state == .playing {
+            player.seek(to: newTime)
+            player.play()
         }
     }
     

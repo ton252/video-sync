@@ -18,3 +18,9 @@ func encodedData<T: Encodable>(data: T?) -> [String: Any]? {
     guard let jsonData = try? JSONEncoder().encode(data) else { return nil }
     return try? JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any]
 }
+
+func dictFromJSONString(_ str: String?) -> [String: Any]? {
+    guard let str = str else { return nil }
+    guard let data = str.data(using: String.Encoding.utf8) else { return nil }
+    return try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? [String:Any]
+}

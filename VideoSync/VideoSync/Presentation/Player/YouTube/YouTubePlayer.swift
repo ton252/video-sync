@@ -57,6 +57,7 @@ struct YouTubePlayer: UIViewRepresentable {
         
         init(_ parent: YouTubePlayer) {
             self.parent = parent
+            parent.player.update()
             super.init()
         }
         
@@ -76,23 +77,32 @@ struct YouTubePlayer: UIViewRepresentable {
             return playerView!.currentTime
         }
         
+        func getBufferingTime(player: Player) -> TimeInterval {
+            return playerView!.bufferingTime
+        }
+        
         func play(player: Player) {
+            parent.player.update()
             playerView?.play()
         }
         
         func pause(player: Player) {
+            parent.player.update()
             playerView?.pause()
         }
         
         func seek(player: Player, to time: TimeInterval) {
+            parent.player.update()
             playerView?.seek(time: time)
         }
         
         func youTubePlayerStateChange(_ player: YouTubePlayerWebView, state: PlayerState) {
+            parent.player.update()
             parent.player.onStateChange.send(state)
         }
         
         func youTubePlayerTimeChange(_ player: YouTubePlayerWebView, time: TimeInterval) {
+            parent.player.update()
             parent.player.onTimeChange.send(time)
         }
     }

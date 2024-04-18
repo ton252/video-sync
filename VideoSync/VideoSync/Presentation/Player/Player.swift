@@ -27,13 +27,14 @@ protocol PlayerDelegate: AnyObject {
     
     func getState(player: Player) -> PlayerState
     func getCurrentTime(player: Player) -> TimeInterval
+    func getBufferingTime(player: Player) -> TimeInterval
     
     func play(player: Player)
     func pause(player: Player)
     func seek(player: Player, to time: TimeInterval)
 }
 
-class Player: ObservableObject {
+class Player: ObservableObject {    
     var link: String? {
         didSet { delegate?.loadLink(player: self, link: link) }
     }
@@ -42,15 +43,9 @@ class Player: ObservableObject {
         didSet { delegate?.updateParams(player: self, params: parameters) }
     }
     
-    var state: PlayerState {
-        guard let delegate = delegate else { return .unstarted }
-        return delegate.getState(player: self)
-    }
-    
-    var currentTime: TimeInterval {
-        guard let delegate = delegate else { return 0 }
-        return delegate.getCurrentTime(player: self)
-    }
+    private(set) var state: PlayerState = .unstarted
+    private(set) var currentTime: TimeInterval = 0
+    private(set) var bufferingTime: TimeInterval = 0
     
     let onTimeChange = PassthroughSubject<TimeInterval, Never>()
     let onStateChange = PassthroughSubject<PlayerState, Never>()
@@ -61,8 +56,13 @@ class Player: ObservableObject {
         link: String? = nil,
         parameters: PlayerVars? = nil
     ) {
+        print("Init player")
         self.link = link
         self.parameters = parameters ?? PlayerVars()
+    }
+    
+    deinit {
+        print("Deinit player")
     }
     
     func play() {
@@ -75,6 +75,14 @@ class Player: ObservableObject {
     
     func seek(to time: TimeInterval) {
         delegate?.seek(player: self, to: time)
+    }
+    
+    func update() {
+        guard let delegate = delegate else { return }
+        state = delegate.getState(player: self)
+        currentTime = delegate.getCurrentTime(player: self)
+        bufferingTime = delegate.getBufferingTime(player: self)
+        print(delegate.getBufferingTime(player: self))
     }
 }
 

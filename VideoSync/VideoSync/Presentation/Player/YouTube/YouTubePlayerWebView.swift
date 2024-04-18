@@ -16,6 +16,7 @@ protocol YouTubePlayerWebViewDelegate: AnyObject {
 class YouTubePlayerWebView: UIView {
     private(set) var state: PlayerState = .unstarted
     private(set) var currentTime: TimeInterval = 0
+    private(set) var bufferingTime: TimeInterval = 0
     
     weak var delegate: YouTubePlayerWebViewDelegate?
     
@@ -86,21 +87,29 @@ class YouTubePlayerWebView: UIView {
 
 extension YouTubePlayerWebView: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard let messageBody = message.body as? String else { return }
+        guard
+            let messageBody = message.body as? String,
+            let json = dictFromJSONString(messageBody),
+            let type = json["type"] as? String,
+            let state = json["state"] as? Int,
+            let currentTime = json["currentTime"] as? TimeInterval,
+            let bufferingTime = json["bufferingTime"] as? TimeInterval
+        else { return }
         
-        if messageBody.contains("PlayerReady: ") {
+        self.state = PlayerState.fromYouTubeState(state)
+        self.currentTime = currentTime
+        self.bufferingTime = bufferingTime
+        print(self.bufferingTime)
+                
+        switch type {
+        case "player_ready":
             foregroundView.isHidden = true
-        } else if messageBody.contains("PlayerState: ") {
-            let data = messageBody.replacingOccurrences(of: "PlayerState: ", with: "")
-            let state = PlayerState(rawValue: data) ?? .unstarted
-            self.state = state
-            delegate?.youTubePlayerStateChange(self, state: state)
-            
-        } else if messageBody.contains("CurrentTime: ") {
-            let data = messageBody.replacingOccurrences(of: "CurrentTime: ", with: "")
-            let time = TimeInterval(data) ?? 0
-            currentTime = time
-            delegate?.youTubePlayerTimeChange(self, time: time)
+        case "player_state":
+            delegate?.youTubePlayerStateChange(self, state: self.state)
+        case "player_time_update":
+            delegate?.youTubePlayerTimeChange(self, time: self.currentTime)
+        default:
+            break
         }
     }
     
@@ -191,7 +200,7 @@ extension YouTubePlayerWebView {
             }
             
             function onPlayerReady(event) {
-                window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('PlayerReady: ready');
+                sendUpdate({ type: "player_ready" });
                 event.target.playVideo();
             }
             
@@ -220,6 +229,13 @@ extension YouTubePlayerWebView {
                 }
             }
             
+            function getPlayerState() {
+                if(player && player.getPlayerState) {
+                    return player.getPlayerState();
+                }
+                return YT.PlayerState.UNSTARTED;
+            }
+            
             function getCurrentTime() {
                 if(player && player.getCurrentTime) {
                     return player.getCurrentTime();
@@ -234,11 +250,17 @@ extension YouTubePlayerWebView {
                 return 0;
             }
             
+            function getBufferingTime() {
+                if(player && player.getDuration && player.getVideoLoadedFraction) {
+                    return player.getDuration() * player.getVideoLoadedFraction();
+                }
+                return 0;
+            }
+            
             function startScheduler() {
                 if (!currentTimeInterval) {
                     currentTimeInterval = setInterval(function() {
-                        var currentTime = getCurrentTime();
-                        window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('CurrentTime: ' + currentTime);
+                        sendUpdate({ type: "player_time_update" });
                     }, 1000);
                 }
             }
@@ -247,32 +269,42 @@ extension YouTubePlayerWebView {
                 if (currentTimeInterval) {
                     clearInterval(currentTimeInterval);
                     currentTimeInterval = null;
-                    var currentTime = getCurrentTime();
-                    window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('CurrentTime: ' + currentTime);
+                        sendUpdate({ type: "player_time_update" });
                 }
             }
             
             function onPlayerStateChange(event) {
                 switch(event.data) {
                     case YT.PlayerState.UNSTARTED:
-                        window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('PlayerState: unstarted');
+                        sendUpdate({ type: "player_state" })
                         break;
                     case YT.PlayerState.PLAYING:
-                        window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('PlayerState: playing');
+                        sendUpdate({ type: "player_state" })
                         startScheduler();
                         break;
                     case YT.PlayerState.ENDED:
                         stopScheduler();
-                        window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('PlayerState: ended');
+                        sendUpdate({ type: "player_state" })
                         break;
                     case YT.PlayerState.PAUSED:
                         stopScheduler();
-                        window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('PlayerState: paused');
+                        sendUpdate({ type: "player_state" })
                         break;
                     case YT.PlayerState.BUFFERING:
-                        window.webkit.messageHandlers.youtubePlayerUpdate.postMessage('PlayerState: buffering');
+                        sendUpdate({ type: "player_state" })
                         break;
                 }
+            }
+            
+            function sendUpdate(json) {
+                json.state = json.state || getPlayerState();
+                json.currentTime = json.currentTime || getCurrentTime();
+                json.bufferingTime = json.bufferingTime || getBufferingTime();
+                sendJSON(json);
+            }
+            
+            function sendJSON(json) {
+               window.webkit.messageHandlers.youtubePlayerUpdate.postMessage(JSON.stringify(json));
             }
             </script>
             </body>
@@ -280,3 +312,23 @@ extension YouTubePlayerWebView {
             """
     }
 }
+
+fileprivate extension PlayerState {
+    static func fromYouTubeState(_ state: Int) -> PlayerState {
+        switch state {
+        case -1:
+            return .unstarted
+        case 0:
+            return .ended
+        case 1:
+            return .playing
+        case 2:
+            return .paused
+        case 3:
+            return .buffering
+        default:
+            return .unstarted
+        }
+    }
+}
+
