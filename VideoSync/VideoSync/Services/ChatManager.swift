@@ -23,19 +23,26 @@ final class ChatManager: NSObject, ObservableObject {
     let onRemoteDisconnect = PassthroughSubject<Void, Never>()
     
     private let serviceAdvertiser: MCNearbyServiceAdvertiser
+    private var userIDs = [String: MCPeerID]()
 
     override init() {
         let peerID = MCPeerID(displayName: UIDevice.current.name)
         
         self.peerID = peerID
-        self.serviceAdvertiser = MCNearbyServiceAdvertiser(peer: peerID, discoveryInfo: nil, serviceType: ChatManager.serviceType)
+        self.serviceAdvertiser = MCNearbyServiceAdvertiser(
+            peer: peerID,
+            discoveryInfo: nil,
+            serviceType: ChatManager.serviceType
+        )
         
         super.init()
         
         self.serviceAdvertiser.delegate = self
-        
-        let session = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .required)
-        self.session = session
+        self.session = MCSession(
+            peer: peerID,
+            securityIdentity: nil,
+            encryptionPreference: .required
+        )
     }
     
     func send(message msg: ChatMessage) {
@@ -45,6 +52,7 @@ final class ChatManager: NSObject, ObservableObject {
             message: msg,
             command: nil
         )
+        package.senderID = currentUserID
         send(package: package)
         print("[Send] PeerID: \(peerID.displayName) Message \(msg.body ?? "none")")
         
@@ -107,20 +115,23 @@ extension ChatManager: MCSessionDelegate {
         fromPeer peerID: MCPeerID
     ) {
         guard let package = try? JSONDecoder().decode(ChatPackage.self, from: data) else { return }
+        userIDs[package.senderID] = peerID
         
         switch package.type {
         case .system:
             guard let command = package.command else { return }
             switch command {
             case .disconnectPeers:
-                onRemoteDisconnect.send()
+                DispatchQueue.main.async() { [weak self] in
+                    self?.onRemoteDisconnect.send()
+                }
             }
             return
         case .userMessage:
             guard let msg = package.message else { return }
-            DispatchQueue.main.async {
-                self.onRecieveMessage.send(msg)
-                self.onUpdateMessage.send(msg)
+            DispatchQueue.main.async { [weak self] in
+                self?.onRecieveMessage.send(msg)
+                self?.onUpdateMessage.send(msg)
             }
             return
         }

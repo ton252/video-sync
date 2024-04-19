@@ -139,7 +139,7 @@ final class ChatViewModel: ObservableObject {
     private func syncVideo(_ cmd: Command.SyncVideo) {
         let currentTime = Date().timeIntervalSince1970
         let sendTime = cmd.data.sendTime
-        let networkDelay = max(currentTime - cmd.data.sendTime, 0)
+        let networkDelay = 0.0 //max(currentTime - cmd.data.sendTime, 0)
         let correctedTime = cmd.data.playerTime + networkDelay
 
         let playerState = player.state
@@ -171,7 +171,7 @@ final class ChatViewModel: ObservableObject {
                 // Переход в состояние воспроизведения, если плеер на паузе
                 player.play()
             }
-            if abs(playerCurrentTime - correctedTime) > 1.0 {
+            if abs(playerCurrentTime - correctedTime) > 0.5 {
                 // Корректировка времени при значительной разнице
                 player.seek(to: correctedTime)
             }

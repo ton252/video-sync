@@ -9,6 +9,7 @@ import Foundation
 
 final class ChatPackage: Codable {
     var id: String!
+    var senderID: String!
     var type: ChatPackageType
     var message: ChatMessage?
     var command: SystemCommand?
